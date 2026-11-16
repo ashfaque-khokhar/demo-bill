@@ -70,6 +70,7 @@
     $("hAmount").value = s.headings.amount;
     $("hSubtotal").value = s.headings.subtotal;
     $("hGrand").value = s.headings.grandTotal;
+    $("paperSize").value = s.paperSize || "A4";
   }
 
   function readSettingsForm() {
@@ -101,6 +102,7 @@
     s.headings.amount = $("hAmount").value.trim() || "Amount";
     s.headings.subtotal = $("hSubtotal").value.trim() || "Subtotal";
     s.headings.grandTotal = $("hGrand").value.trim() || "Grand Total";
+    s.paperSize = $("paperSize").value;
     return s;
   }
 

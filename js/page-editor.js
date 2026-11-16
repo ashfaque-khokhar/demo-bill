@@ -21,6 +21,10 @@
     dirty: false
   };
 
+  function paperSize() {
+    return (state.settings && state.settings.paperSize) || "A4";
+  }
+
   var customerIds = {
     name: "customerName",
     mobile: "customerMobile",
@@ -167,7 +171,7 @@
     var doc = state.document;
     doc.documentType = $("documentType").value;
     doc.invoiceDate = $("invoiceDate").value || DocumentEditor.todayIso();
-    doc.paperSize = $("paperSize").value;
+    doc.paperSize = paperSize();
     doc.customer = Customers.readFromForm(customerIds);
     doc.gst.enabled = $("gstEnabled").value === "true";
     doc.gst.supplyType = $("supplyType").value;
@@ -184,7 +188,6 @@
     $("documentType").value = doc.documentType;
     $("documentNumber").value = doc.documentNumber || "";
     $("invoiceDate").value = doc.invoiceDate || DocumentEditor.todayIso();
-    $("paperSize").value = doc.paperSize || "A4";
     Customers.writeToForm(doc.customer || Customers.emptyCustomer(), customerIds);
     $("gstEnabled").value = doc.gst && doc.gst.enabled ? "true" : "false";
     $("supplyType").value = (doc.gst && doc.gst.supplyType) || "auto";
@@ -401,7 +404,7 @@
     addRow("Grand Total", Money.formatINR(calc.grandTotalMinor), "grand");
 
     $("documentNumber").value = state.document.documentNumber || "";
-    $("previewPaper").className = "preview-paper " + String(state.document.paperSize || "A4").toLowerCase();
+    $("previewPaper").className = "preview-paper " + String(paperSize()).toLowerCase();
     Preview.render($("invoicePreview"), state.document, calc, business, state.logoUrl);
     return calc;
   }
@@ -492,7 +495,7 @@
 
   function bindEvents() {
     [
-      "documentType", "invoiceDate", "paperSize", "customerName", "customerMobile",
+      "documentType", "invoiceDate", "customerName", "customerMobile",
       "customerAddress", "customerEmail", "customerGstin", "customerState",
       "customerStateCode", "gstEnabled", "supplyType", "invoiceDiscountType",
       "invoiceDiscountValue", "notes"
@@ -574,7 +577,7 @@
       try {
         var calc = refreshPreview();
         var business = state.document.businessSnapshot || state.settings;
-        await ExportPdf.exportPdf(state.document, calc, business, state.logoDataUrl, state.document.paperSize);
+        await ExportPdf.exportPdf(state.document, calc, business, state.logoDataUrl, paperSize());
         setStatus("PDF downloaded.", "ok");
       } catch (error) {
         setStatus(error.message || "PDF export failed.", "error");
