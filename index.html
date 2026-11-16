@@ -43,96 +43,114 @@
   <main class="page" aria-label="Invoice editor">
     <div class="layout" id="editorLayout">
       <div class="editor-pane">
-        <div class="card">
-          <h2>Document</h2>
-          <div class="grid-2">
-            <div class="field">
-              <label for="documentType">Document type</label>
-              <select id="documentType"></select>
-            </div>
-            <div class="field">
-              <label for="documentNumber">Document number</label>
-              <input id="documentNumber" type="text" readonly>
-            </div>
-            <div class="field">
-              <label for="invoiceDate">Date</label>
-              <input id="invoiceDate" type="date">
-            </div>
+        <div class="card document-card">
+          <div class="document-card__header">
+            <label class="document-card__type-label" for="documentType">Document type</label>
+            <select id="documentType" class="document-card__type-select"></select>
           </div>
 
-          <h3>Customer</h3>
-          <div class="grid-2">
-            <div class="field">
-              <label for="customerName">Name *</label>
-              <input id="customerName" type="text" autocomplete="name">
-            </div>
-            <div class="field">
-              <label for="customerMobile">Mobile</label>
-              <input id="customerMobile" type="tel" autocomplete="tel">
-            </div>
-            <div class="field full">
-              <label for="customerAddress">Address</label>
-              <textarea id="customerAddress" rows="2"></textarea>
-            </div>
-            <div class="field">
-              <label for="customerEmail">Email</label>
-              <input id="customerEmail" type="email">
-            </div>
-            <div class="field">
-              <label for="customerGstin">Customer GSTIN</label>
-              <input id="customerGstin" type="text">
-            </div>
-            <div class="field">
-              <label for="customerState">Customer state / place of supply</label>
-              <input id="customerState" type="text" list="stateList">
-            </div>
-            <div class="field">
-              <label for="customerStateCode">State code</label>
-              <input id="customerStateCode" type="text" maxlength="2">
-            </div>
-          </div>
+          <div class="editor-sections">
+            <details class="settings-section" open>
+              <summary class="settings-section__summary">
+                <span class="settings-section__title">Customer</span>
+                <span class="settings-section__chevron" aria-hidden="true"></span>
+              </summary>
+              <div class="settings-section__body">
+                <div class="grid-2">
+                  <div class="field">
+                    <label for="customerName">Name *</label>
+                    <input id="customerName" type="text" autocomplete="name">
+                  </div>
+                  <div class="field">
+                    <label for="customerMobile">Mobile</label>
+                    <input id="customerMobile" type="tel" autocomplete="tel">
+                  </div>
+                  <div class="field full">
+                    <label for="customerAddress">Address</label>
+                    <textarea id="customerAddress" rows="2"></textarea>
+                  </div>
+                </div>
+              </div>
+            </details>
 
-          <h3>Tax &amp; discount</h3>
-          <div class="grid-2">
-            <div class="field">
-              <label for="gstEnabled">GST</label>
-              <select id="gstEnabled">
-                <option value="false">Disabled</option>
-                <option value="true">Enabled</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="supplyType">Supply type</label>
-              <select id="supplyType">
-                <option value="auto">Auto (compare states)</option>
-                <option value="intra-state">Intra-state (CGST + SGST)</option>
-                <option value="inter-state">Inter-state (IGST)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="invoiceDiscountType">Invoice discount</label>
-              <select id="invoiceDiscountType">
-                <option value="none">None</option>
-                <option value="percent">Percent</option>
-                <option value="fixed">Fixed amount (₹)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="invoiceDiscountValue">Discount value</label>
-              <input id="invoiceDiscountValue" type="number" min="0" step="0.01" value="0">
-            </div>
-            <div class="field full">
-              <label for="notes">Notes / reference</label>
-              <textarea id="notes" rows="2"></textarea>
-            </div>
+            <details class="settings-section">
+              <summary class="settings-section__summary">
+                <span class="settings-section__title">More customer details</span>
+                <span class="settings-section__chevron" aria-hidden="true"></span>
+              </summary>
+              <div class="settings-section__body">
+                <div class="grid-2">
+                  <div class="field">
+                    <label for="customerEmail">Email</label>
+                    <input id="customerEmail" type="email">
+                  </div>
+                  <div class="field">
+                    <label for="customerGstin">Customer GSTIN</label>
+                    <input id="customerGstin" type="text">
+                  </div>
+                  <div class="field">
+                    <label for="customerState">State</label>
+                    <input id="customerState" type="text" list="stateList">
+                  </div>
+                  <div class="field">
+                    <label for="customerStateCode">State code</label>
+                    <input id="customerStateCode" type="text" maxlength="2">
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <details class="settings-section" id="docTaxSection">
+              <summary class="settings-section__summary">
+                <span class="settings-section__title">Tax &amp; notes</span>
+                <span class="settings-section__chevron" aria-hidden="true"></span>
+              </summary>
+              <div class="settings-section__body">
+                <div class="grid-2">
+                  <div class="field">
+                    <label for="gstEnabled">GST</label>
+                    <select id="gstEnabled">
+                      <option value="false">Disabled</option>
+                      <option value="true">Enabled</option>
+                    </select>
+                  </div>
+                  <div class="field" id="supplyTypeField">
+                    <label for="supplyType">Supply type</label>
+                    <select id="supplyType">
+                      <option value="auto">Auto (compare states)</option>
+                      <option value="intra-state">Intra-state (CGST + SGST)</option>
+                      <option value="inter-state">Inter-state (IGST)</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="invoiceDiscountType">Invoice discount</label>
+                    <select id="invoiceDiscountType">
+                      <option value="none">None</option>
+                      <option value="percent">Percent</option>
+                      <option value="fixed">Fixed amount (₹)</option>
+                    </select>
+                  </div>
+                  <div class="field" id="invoiceDiscountValueField">
+                    <label for="invoiceDiscountValue">Discount value</label>
+                    <input id="invoiceDiscountValue" type="number" min="0" step="0.01" value="0">
+                  </div>
+                  <div class="field full">
+                    <label for="notes">Notes / reference</label>
+                    <textarea id="notes" rows="2"></textarea>
+                  </div>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
 
-        <div class="card" style="margin-top:16px;">
-          <div class="toolbar panel-controls">
-            <h2 style="margin:0;flex:1;">Items</h2>
-            <button type="button" class="btn secondary" id="btnAddItem">Add item</button>
-            <button type="button" class="btn secondary" id="btnPickCatalogue">From catalogue</button>
+        <div class="card card--items" style="margin-top:16px;">
+          <div class="card-toolbar panel-controls">
+            <h2 class="card-toolbar__title">Line items</h2>
+            <div class="card-toolbar__actions">
+              <button type="button" class="btn secondary" id="btnAddItem">Add row</button>
+              <button type="button" class="btn secondary" id="btnPickCatalogue">Catalogue</button>
+            </div>
           </div>
           <div class="table-wrap">
             <table class="items" id="itemsTable">
@@ -155,21 +173,32 @@
           <div class="totals-box" id="totalsBox"></div>
         </div>
 
-        <div class="toolbar panel-controls" style="margin-top:16px;">
-          <button type="button" class="btn secondary" id="btnPreviewToggle" aria-expanded="false" aria-controls="previewShell">Show invoice preview</button>
-          <button type="button" class="btn" id="btnSave">Save</button>
-          <button type="button" class="btn secondary" id="btnNew">New</button>
-          <button type="button" class="btn secondary" id="btnDuplicate">Duplicate</button>
-          <button type="button" class="btn secondary" id="btnPng">Download PNG</button>
-          <button type="button" class="btn secondary" id="btnPdf">Download PDF</button>
-          <button type="button" class="btn secondary" id="btnPrint">Print</button>
+        <div class="editor-action-bar no-print" role="toolbar" aria-label="Document actions">
+          <p class="editor-action-bar__heading">Actions</p>
+          <button type="button" class="btn editor-action-bar__save" id="btnSave">Save invoice</button>
+          <div class="editor-action-bar__cluster">
+            <span class="editor-action-bar__group-label" id="editorActionsMoreLabel">More</span>
+            <button type="button" class="btn secondary" id="btnNew">New</button>
+            <details class="editor-action-menu" id="editorExportMenu">
+              <summary class="btn secondary">Export</summary>
+              <div class="editor-action-menu__panel" role="menu" aria-labelledby="editorExportMenuTitle">
+                <p class="editor-action-menu__heading" id="editorExportMenuTitle">Download &amp; print</p>
+                <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPng">PNG image</button>
+                <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPdf">PDF file</button>
+                <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPrint">Print</button>
+              </div>
+            </details>
+            <button type="button" class="btn secondary" id="btnPreviewToggle" aria-expanded="false" aria-controls="previewShell">Preview</button>
+          </div>
         </div>
       </div>
 
       <aside class="preview-shell card" id="previewShell" aria-label="Live invoice preview">
-        <div class="toolbar panel-controls">
-          <h2 id="previewShellTitle" style="margin:0;flex:1;">Live preview</h2>
-          <button type="button" class="btn secondary" id="btnPreviewClose" hidden>Hide preview</button>
+        <div class="card-toolbar panel-controls">
+          <h2 class="card-toolbar__title" id="previewShellTitle">Invoice preview</h2>
+          <div class="card-toolbar__actions">
+            <button type="button" class="btn secondary" id="btnPreviewClose" hidden>Close</button>
+          </div>
         </div>
         <div id="previewPaper" class="preview-paper a4">
           <div id="invoicePreview" class="invoice-preview"></div>

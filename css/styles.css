@@ -315,6 +315,69 @@ textarea:focus-visible {
   color: var(--primary-dark);
 }
 
+.document-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.document-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--elevated-5);
+}
+
+.document-card__type-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.document-card__type-select {
+  flex: 1;
+  min-width: 0;
+  max-width: 280px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.editor-sections {
+  display: flex;
+  flex-direction: column;
+}
+
+.document-card details.settings-section {
+  scroll-margin-top: 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+}
+
+.document-card details.settings-section + details.settings-section {
+  border-top: 1px solid var(--line);
+}
+
+.document-card details.settings-section[open] > .settings-section__summary {
+  background: var(--elevated-4);
+}
+
+.document-card .settings-section .grid-2 .field {
+  margin-bottom: 0;
+}
+
+.document-card .field.is-hidden {
+  display: none;
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -336,6 +399,13 @@ textarea:focus-visible {
   color: var(--muted);
 }
 
+.field-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
 .field input,
 .field select,
 .field textarea {
@@ -354,6 +424,34 @@ textarea:focus-visible {
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.card-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.card-toolbar__title {
+  margin: 0;
+  font-family: var(--font);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.card-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .table-wrap {
@@ -972,6 +1070,123 @@ details.settings-section[open] .settings-section__chevron {
 
 .grid-headings .field {
   margin-bottom: 0;
+}
+
+.editor-action-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 15;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin: 20px -24px -40px;
+  padding: 12px 24px;
+  background: var(--save-bar-bg);
+  border-top: 1px solid var(--line);
+  backdrop-filter: blur(8px);
+}
+
+.editor-action-bar__heading {
+  margin: 0;
+  flex: 0 0 100%;
+  width: 100%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.editor-action-bar__save {
+  min-width: 7rem;
+}
+
+.editor-action-bar__cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.editor-action-bar__group-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 2px;
+}
+
+@media (min-width: 561px) {
+  .editor-action-bar__heading {
+    flex: 0 0 auto;
+    width: auto;
+    margin-right: 4px;
+  }
+}
+
+.editor-action-menu {
+  position: relative;
+}
+
+.editor-action-menu > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.editor-action-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.editor-action-menu__panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 20;
+  min-width: 11.5rem;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.editor-action-menu__heading {
+  margin: 0;
+  padding: 6px 10px 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.editor-action-menu__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  appearance: none;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 12px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.editor-action-menu__item:hover {
+  background: var(--elevated);
+}
+
+.editor-action-menu__item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 0;
 }
 
 .settings-save-bar {

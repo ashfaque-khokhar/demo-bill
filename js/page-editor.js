@@ -104,7 +104,7 @@
     }
     layout.classList.toggle("preview-open", open);
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    toggle.textContent = open ? "Hide preview" : "Show invoice preview";
+    toggle.textContent = open ? "Hide preview" : "Preview";
     if (closeBtn) {
       closeBtn.hidden = !open;
     }
@@ -167,10 +167,30 @@
     });
   }
 
+  function isUnsavedDraft(doc) {
+    return !!doc && (!doc.id || doc.isNew === true);
+  }
+
+  function applyDraftDateAndNumber() {
+    if (!state.document || !state.settings || !isUnsavedDraft(state.document)) {
+      return;
+    }
+    var doc = state.document;
+    doc.invoiceDate = DocumentEditor.todayIso();
+    var peek = Numbering.peekNumber(state.settings, doc.documentType, doc.invoiceDate);
+    doc.documentNumber = peek.documentNumber;
+    doc.numberingSnapshot = {
+      pattern: state.settings.numbering.pattern,
+      sequenceValue: peek.sequenceValue
+    };
+  }
+
   function syncFormToDocument() {
     var doc = state.document;
     doc.documentType = $("documentType").value;
-    doc.invoiceDate = $("invoiceDate").value || DocumentEditor.todayIso();
+    if (isUnsavedDraft(doc)) {
+      applyDraftDateAndNumber();
+    }
     doc.paperSize = paperSize();
     doc.customer = Customers.readFromForm(customerIds);
     doc.gst.enabled = $("gstEnabled").value === "true";
@@ -183,11 +203,38 @@
     return doc;
   }
 
+  function syncDocumentCardUi() {
+    var typeId = $("documentType").value;
+    var typeMeta = DocumentTypes.getById(typeId);
+    var taxSection = $("docTaxSection");
+    var showTax = typeMeta.showGstFields;
+
+    if (taxSection) {
+      taxSection.hidden = !showTax;
+      if (!showTax) {
+        taxSection.open = false;
+      }
+    }
+
+    var supplyField = $("supplyTypeField");
+    var gstOn = $("gstEnabled").value === "true";
+    if (supplyField) {
+      supplyField.classList.toggle("is-hidden", !gstOn || !showTax);
+    }
+
+    var discountValueField = $("invoiceDiscountValueField");
+    var discType = $("invoiceDiscountType").value;
+    if (discountValueField) {
+      discountValueField.classList.toggle("is-hidden", discType === "none");
+    }
+  }
+
   function syncDocumentToForm() {
     var doc = state.document;
+    if (isUnsavedDraft(doc)) {
+      applyDraftDateAndNumber();
+    }
     $("documentType").value = doc.documentType;
-    $("documentNumber").value = doc.documentNumber || "";
-    $("invoiceDate").value = doc.invoiceDate || DocumentEditor.todayIso();
     Customers.writeToForm(doc.customer || Customers.emptyCustomer(), customerIds);
     $("gstEnabled").value = doc.gst && doc.gst.enabled ? "true" : "false";
     $("supplyType").value = (doc.gst && doc.gst.supplyType) || "auto";
@@ -195,6 +242,7 @@
     $("invoiceDiscountValue").value = (doc.discount && doc.discount.value) || 0;
     $("notes").value = doc.notes || "";
     renderItemsTable(doc.items || []);
+    syncDocumentCardUi();
     refreshPreview();
   }
 
@@ -360,6 +408,10 @@
   }
 
   function refreshPreview() {
+    if (state.document && isUnsavedDraft(state.document)) {
+      state.document.documentType = $("documentType").value;
+      applyDraftDateAndNumber();
+    }
     syncFormToDocument();
     var business = state.document.businessSnapshot || state.settings;
     var calc = Calculations.calculateDocument(state.document, state.settings);
@@ -403,7 +455,6 @@
     }
     addRow("Grand Total", Money.formatINR(calc.grandTotalMinor), "grand");
 
-    $("documentNumber").value = state.document.documentNumber || "";
     $("previewPaper").className = "preview-paper " + String(paperSize()).toLowerCase();
     Preview.render($("invoicePreview"), state.document, calc, business, state.logoUrl);
     return calc;
@@ -493,9 +544,16 @@
     return false;
   }
 
+  function closeExportMenu() {
+    var menu = $("editorExportMenu");
+    if (menu) {
+      menu.open = false;
+    }
+  }
+
   function bindEvents() {
     [
-      "documentType", "invoiceDate", "customerName", "customerMobile",
+      "documentType", "customerName", "customerMobile",
       "customerAddress", "customerEmail", "customerGstin", "customerState",
       "customerStateCode", "gstEnabled", "supplyType", "invoiceDiscountType",
       "invoiceDiscountValue", "notes"
@@ -503,16 +561,23 @@
       var node = $(id);
       node.addEventListener("input", onEditorChange);
       node.addEventListener("change", function () {
-        if (id === "documentType" && state.document && state.document.isNew !== false && !state.document.id) {
-          var peek = Numbering.peekNumber(state.settings, $("documentType").value, $("invoiceDate").value);
-          state.document.documentNumber = peek.documentNumber;
-          state.document.numberingSnapshot = {
-            pattern: state.settings.numbering.pattern,
-            sequenceValue: peek.sequenceValue
-          };
-          if ($("documentType").value === "tax-invoice") {
-            $("gstEnabled").value = "true";
+        if (id === "documentType") {
+          if (isUnsavedDraft(state.document)) {
+            state.document.documentType = $("documentType").value;
+            applyDraftDateAndNumber();
+            if ($("documentType").value === "tax-invoice") {
+              $("gstEnabled").value = "true";
+            }
           }
+          if ($("documentType").value === "tax-invoice") {
+            var taxSec = $("docTaxSection");
+            if (taxSec) {
+              taxSec.open = true;
+            }
+          }
+        }
+        if (id === "documentType" || id === "gstEnabled" || id === "invoiceDiscountType") {
+          syncDocumentCardUi();
         }
         onEditorChange();
       });
@@ -558,13 +623,8 @@
       }
       await startNewDocument($("documentType").value);
     });
-    $("btnDuplicate").addEventListener("click", function () {
-      syncFormToDocument();
-      state.document = DocumentEditor.duplicateDocument(state.document, state.settings);
-      syncDocumentToForm();
-      setStatus("Duplicated as a new document. Save to issue a number.", "info");
-    });
     $("btnPng").addEventListener("click", async function () {
+      closeExportMenu();
       try {
         refreshPreview();
         await ExportPng.exportPng($("invoicePreview"), state.document);
@@ -574,6 +634,7 @@
       }
     });
     $("btnPdf").addEventListener("click", async function () {
+      closeExportMenu();
       try {
         var calc = refreshPreview();
         var business = state.document.businessSnapshot || state.settings;
@@ -584,6 +645,7 @@
       }
     });
     $("btnPrint").addEventListener("click", function () {
+      closeExportMenu();
       refreshPreview();
       Print.printDocument();
       setStatus("Print dialog opened.", "info");
