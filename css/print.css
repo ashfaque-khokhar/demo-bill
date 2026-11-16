@@ -1,0 +1,64 @@
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff !important;
+  }
+
+  .app-header,
+  .status-bar,
+  .nav-actions,
+  .toolbar,
+  .editor-pane,
+  .panel-controls,
+  .modal-backdrop,
+  .no-print {
+    display: none !important;
+  }
+
+  .panel {
+    display: none !important;
+    padding: 0 !important;
+  }
+
+  .panel.active#panel-editor {
+    display: block !important;
+  }
+
+  .layout {
+    display: block !important;
+  }
+
+  .preview-shell {
+    position: static !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .preview-paper,
+  .card {
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  .invoice-preview {
+    font-size: 11pt;
+    color: #000;
+  }
+
+  .invoice-preview th,
+  .invoice-preview td {
+    border-color: #000;
+  }
+
+  .invoice-preview tr {
+    page-break-inside: avoid;
+  }
+
+  .invoice-preview .disclaimer {
+    page-break-inside: avoid;
+  }
+}

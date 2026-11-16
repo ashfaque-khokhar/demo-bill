@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="96" viewBox="0 0 240 96" role="img" aria-label="Logo placeholder">
+  <rect width="240" height="96" rx="8" fill="#e8eef3"/>
+  <rect x="16" y="16" width="64" height="64" rx="8" fill="#2d5a7f"/>
+  <text x="48" y="56" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#ffffff">B</text>
+  <text x="100" y="44" font-family="Georgia, serif" font-size="18" fill="#212529">Your Business</text>
+  <text x="100" y="68" font-family="Arial, sans-serif" font-size="12" fill="#6c757d">Upload a logo in Settings</text>
+</svg>
