@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Billing Generator</title>
+  <title>Editor · Billing Generator</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/print.css">
 </head>
-<body>
+<body data-page="editor">
   <header class="app-header no-print">
     <button type="button" class="nav-toggle" id="btnNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
       <span class="nav-toggle-bar" aria-hidden="true"></span>
@@ -28,17 +28,16 @@
       <button type="button" class="nav-drawer-close" id="btnNavClose" aria-label="Close menu">&times;</button>
     </div>
     <nav class="nav-drawer-nav" aria-label="Main">
-      <button type="button" class="nav-drawer-link active" data-panel="editor">Editor</button>
-      <button type="button" class="nav-drawer-link" data-panel="settings">Settings</button>
-      <button type="button" class="nav-drawer-link" data-panel="history">History</button>
-      <button type="button" class="nav-drawer-link" data-panel="backup">Backup</button>
+      <a href="index.html" class="nav-drawer-link" data-page="editor">Editor</a>
+      <a href="settings.html" class="nav-drawer-link" data-page="settings">Settings</a>
+      <a href="history.html" class="nav-drawer-link" data-page="history">History</a>
+      <a href="backup.html" class="nav-drawer-link" data-page="backup">Backup</a>
     </nav>
   </aside>
 
   <div id="status" class="status-bar no-print" role="status" aria-live="polite"></div>
 
-  <!-- EDITOR -->
-  <section id="panel-editor" class="panel active" aria-label="Invoice editor">
+  <main class="page" aria-label="Invoice editor">
     <div class="layout">
       <div class="editor-pane">
         <div class="card">
@@ -179,176 +178,7 @@
         </div>
       </aside>
     </div>
-  </section>
-
-  <!-- SETTINGS -->
-  <section id="panel-settings" class="panel" aria-label="Business settings">
-    <div class="card" style="max-width:920px;margin:0 auto;">
-      <h2>Business settings</h2>
-      <p class="hint">Saved locally in this browser. Changing settings does not alter previously saved documents.</p>
-      <div class="grid-2">
-        <div class="field">
-          <label for="businessName">Business name *</label>
-          <input id="businessName" type="text">
-        </div>
-        <div class="field">
-          <label for="businessMobile">Mobile *</label>
-          <input id="businessMobile" type="tel">
-        </div>
-        <div class="field full">
-          <label for="businessAddress">Address *</label>
-          <textarea id="businessAddress" rows="2"></textarea>
-        </div>
-        <div class="field">
-          <label for="businessEmail">Email</label>
-          <input id="businessEmail" type="email">
-        </div>
-        <div class="field">
-          <label for="businessWebsite">Website</label>
-          <input id="businessWebsite" type="text">
-        </div>
-        <div class="field">
-          <label for="businessGstin">GSTIN</label>
-          <input id="businessGstin" type="text">
-        </div>
-        <div class="field">
-          <label for="supplierState">Supplier state</label>
-          <input id="supplierState" type="text" list="stateList">
-        </div>
-        <div class="field">
-          <label for="supplierStateCode">Supplier state code</label>
-          <input id="supplierStateCode" type="text" maxlength="2">
-        </div>
-        <div class="field">
-          <label for="upiId">UPI ID (optional)</label>
-          <input id="upiId" type="text">
-        </div>
-        <div class="field">
-          <label for="bankDetails">Bank details (optional)</label>
-          <input id="bankDetails" type="text">
-        </div>
-        <div class="field full">
-          <label for="disclaimer">Disclaimer / terms</label>
-          <textarea id="disclaimer" rows="3"></textarea>
-        </div>
-      </div>
-
-      <h3>Logo</h3>
-      <div class="grid-2">
-        <div class="field">
-          <label for="logoFile">Upload logo (PNG/JPEG/WebP, max 2 MB)</label>
-          <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp">
-        </div>
-        <div class="field">
-          <label>Preview</label>
-          <img id="logoPreview" class="logo-preview" alt="Business logo preview" src="assets/logo-placeholder.svg">
-        </div>
-        <div class="field">
-          <label for="logoWidth">Logo width (px)</label>
-          <input id="logoWidth" type="number" min="40" max="300" value="120">
-        </div>
-        <div class="field">
-          <label for="logoHeight">Logo height (px)</label>
-          <input id="logoHeight" type="number" min="20" max="160" value="48">
-        </div>
-        <div class="field">
-          <label for="logoAlignment">Logo alignment</label>
-          <select id="logoAlignment">
-            <option value="left">Left</option>
-            <option value="center">Center</option>
-            <option value="right">Right</option>
-          </select>
-        </div>
-        <div class="field">
-          <button type="button" class="btn secondary" id="btnClearLogo">Clear logo</button>
-        </div>
-      </div>
-
-      <h3>Numbering</h3>
-      <div class="grid-2">
-        <div class="field">
-          <label for="numberPattern">Pattern</label>
-          <input id="numberPattern" type="text" value="{PREFIX}/{YYYY}/{SEQ}">
-        </div>
-        <div class="field">
-          <label for="sequencePadding">Sequence padding</label>
-          <input id="sequencePadding" type="number" min="1" max="8" value="4">
-        </div>
-        <div class="field">
-          <label for="sequenceStart">Sequence start</label>
-          <input id="sequenceStart" type="number" min="1" value="1">
-        </div>
-        <div class="field">
-          <label for="resetRule">Reset rule</label>
-          <select id="resetRule">
-            <option value="never">Never</option>
-            <option value="yearly">Yearly</option>
-            <option value="manual">Manual</option>
-          </select>
-        </div>
-      </div>
-      <p class="hint">Tokens: {PREFIX} {YYYY} {YY} {MM} {SEQ}. Separate sequence per document type.</p>
-
-      <h3>Table headings</h3>
-      <div class="grid-2">
-        <div class="field"><label for="hItem">Item</label><input id="hItem" type="text"></div>
-        <div class="field"><label for="hQty">Quantity</label><input id="hQty" type="text"></div>
-        <div class="field"><label for="hUnit">Unit</label><input id="hUnit" type="text"></div>
-        <div class="field"><label for="hRate">Rate</label><input id="hRate" type="text"></div>
-        <div class="field"><label for="hDiscount">Discount</label><input id="hDiscount" type="text"></div>
-        <div class="field"><label for="hTax">Tax</label><input id="hTax" type="text"></div>
-        <div class="field"><label for="hAmount">Amount</label><input id="hAmount" type="text"></div>
-        <div class="field"><label for="hSubtotal">Subtotal</label><input id="hSubtotal" type="text"></div>
-        <div class="field"><label for="hGrand">Grand total</label><input id="hGrand" type="text"></div>
-      </div>
-
-      <h3>Item catalogue</h3>
-      <div class="toolbar">
-        <button type="button" class="btn secondary" id="btnAddCatalogue">Add catalogue item</button>
-      </div>
-      <div id="catalogueList" class="history-list"></div>
-
-      <div class="toolbar" style="margin-top:16px;">
-        <button type="button" class="btn" id="btnSaveSettings">Save settings</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- HISTORY -->
-  <section id="panel-history" class="panel" aria-label="Invoice history">
-    <div class="card" style="max-width:960px;margin:0 auto;">
-      <h2>Saved documents</h2>
-      <div class="grid-2">
-        <div class="field">
-          <label for="historySearch">Search number / customer</label>
-          <input id="historySearch" type="search">
-        </div>
-        <div class="field">
-          <label for="historyDate">Filter by date</label>
-          <input id="historyDate" type="date">
-        </div>
-      </div>
-      <div id="historyList" class="history-list"></div>
-    </div>
-  </section>
-
-  <!-- BACKUP -->
-  <section id="panel-backup" class="panel" aria-label="Backup and restore">
-    <div class="card" style="max-width:720px;margin:0 auto;">
-      <h2>Backup &amp; restore</h2>
-      <div class="backup-warning">
-        All data stays in this browser profile only. Clearing site data or losing this device can permanently delete invoices unless you keep a backup.
-      </div>
-      <p class="hint" id="lastBackupHint">No backup recorded yet in this browser.</p>
-      <div class="toolbar">
-        <button type="button" class="btn" id="btnExportBackup">Download JSON backup</button>
-        <label class="btn secondary" for="backupFile" style="display:inline-flex;align-items:center;cursor:pointer;">
-          Import backup
-          <input id="backupFile" class="sr-only" type="file" accept="application/json,.json">
-        </label>
-      </div>
-    </div>
-  </section>
+  </main>
 
   <datalist id="stateList">
     <option value="Andhra Pradesh"></option>
@@ -493,9 +323,9 @@
   <script defer src="js/export-png.js"></script>
   <script defer src="js/export-pdf.js"></script>
   <script defer src="js/print.js"></script>
-  <script defer src="js/backup-restore.js"></script>
   <script defer src="js/document-editor.js"></script>
   <script defer src="js/onboarding.js"></script>
-  <script defer src="js/app.js"></script>
+  <script defer src="js/ui-common.js"></script>
+  <script defer src="js/page-editor.js"></script>
 </body>
 </html>

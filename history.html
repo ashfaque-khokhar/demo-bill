@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>History · Billing Generator</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/print.css">
+</head>
+<body data-page="history">
+  <header class="app-header no-print">
+    <button type="button" class="nav-toggle" id="btnNavToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navDrawer">
+      <span class="nav-toggle-bar" aria-hidden="true"></span>
+      <span class="nav-toggle-bar" aria-hidden="true"></span>
+      <span class="nav-toggle-bar" aria-hidden="true"></span>
+    </button>
+    <div class="brand">
+      <h1>Billing Generator</h1>
+      <p>Local invoices · GST · PNG / PDF · backup</p>
+    </div>
+  </header>
+
+  <div id="navDrawerBackdrop" class="nav-drawer-backdrop no-print" aria-hidden="true"></div>
+  <aside id="navDrawer" class="nav-drawer no-print" role="dialog" aria-modal="true" aria-label="Main navigation" aria-hidden="true">
+    <div class="nav-drawer-header">
+      <h2 class="nav-drawer-title">Menu</h2>
+      <button type="button" class="nav-drawer-close" id="btnNavClose" aria-label="Close menu">&times;</button>
+    </div>
+    <nav class="nav-drawer-nav" aria-label="Main">
+      <a href="index.html" class="nav-drawer-link" data-page="editor">Editor</a>
+      <a href="settings.html" class="nav-drawer-link" data-page="settings">Settings</a>
+      <a href="history.html" class="nav-drawer-link" data-page="history">History</a>
+      <a href="backup.html" class="nav-drawer-link" data-page="backup">Backup</a>
+    </nav>
+  </aside>
+
+  <div id="status" class="status-bar no-print" role="status" aria-live="polite"></div>
+
+  <main class="page" aria-label="Invoice history">
+    <div class="card" style="max-width:960px;margin:0 auto;">
+      <h2>Saved documents</h2>
+      <div class="grid-2">
+        <div class="field">
+          <label for="historySearch">Search number / customer</label>
+          <input id="historySearch" type="search">
+        </div>
+        <div class="field">
+          <label for="historyDate">Filter by date</label>
+          <input id="historyDate" type="date">
+        </div>
+      </div>
+      <div id="historyList" class="history-list"></div>
+    </div>
+  </main>
+
+  <div id="modalBackdrop" class="modal-backdrop no-print" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <h3 id="modalTitle">Confirm</h3>
+      <p id="modalMessage"></p>
+      <div class="toolbar" id="modalActions"></div>
+    </div>
+  </div>
+
+  <script defer src="js/money.js"></script>
+  <script defer src="js/document-types.js"></script>
+  <script defer src="js/numbering.js"></script>
+  <script defer src="js/db.js"></script>
+  <script defer src="js/storage-repository.js"></script>
+  <script defer src="js/settings.js"></script>
+  <script defer src="js/items.js"></script>
+  <script defer src="js/customers.js"></script>
+  <script defer src="js/preview.js"></script>
+  <script defer src="js/document-editor.js"></script>
+  <script defer src="js/ui-common.js"></script>
+  <script defer src="js/page-history.js"></script>
+</body>
+</html>

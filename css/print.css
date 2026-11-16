@@ -21,13 +21,13 @@
     display: none !important;
   }
 
-  .panel {
+  body:not([data-page="editor"]) .page {
     display: none !important;
-    padding: 0 !important;
   }
 
-  .panel.active#panel-editor {
+  body[data-page="editor"] .page {
     display: block !important;
+    padding: 0 !important;
   }
 
   .layout {

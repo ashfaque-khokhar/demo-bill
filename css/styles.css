@@ -182,8 +182,11 @@ button, input, select, textarea {
 
 .nav-drawer-link {
   appearance: none;
+  display: block;
+  box-sizing: border-box;
   width: 100%;
   text-align: left;
+  text-decoration: none;
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 12px 14px;
@@ -257,12 +260,10 @@ textarea:focus-visible {
 .status-bar .error { color: var(--danger); }
 .status-bar .info { color: var(--muted); }
 
-.panel {
-  display: none;
+.page {
+  display: block;
   padding: 16px 24px 40px;
 }
-
-.panel.active { display: block; }
 
 .layout {
   display: grid;

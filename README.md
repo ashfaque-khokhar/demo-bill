@@ -11,7 +11,18 @@ cd "/path/to/demo bill"
 python3 -m http.server 8080
 ```
 
-Then open `http://localhost:8080`.
+Then open `http://localhost:8080` (Editor).
+
+## Pages
+
+| Page | File | Purpose |
+|------|------|---------|
+| Editor | `index.html` | Create / edit invoices, preview, export |
+| Settings | `settings.html` | Business details, logo, numbering, catalogue |
+| History | `history.html` | Open, duplicate, or delete saved documents |
+| Backup | `backup.html` | JSON backup download / import |
+
+Shared chrome and navigation live in each page; page logic is in `js/ui-common.js` plus `js/page-*.js`. Domain modules (`db`, GST, export, etc.) are unchanged.
 
 ## Features
 
