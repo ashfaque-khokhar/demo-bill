@@ -219,6 +219,95 @@
     });
   }
 
+  function updateTextLimitCounter(input, counter, max) {
+    var len = input.value.length;
+    counter.textContent = len + " / " + max;
+    counter.classList.toggle("text-limit-counter--full", len >= max);
+  }
+
+  function bindTextLimitControl(input) {
+    if (!input || input.getAttribute("data-limit-bound") === "1") {
+      return;
+    }
+    var limitKey = input.getAttribute("data-text-limit");
+    if (!limitKey || !global.Validation || !global.Validation.LIMITS) {
+      return;
+    }
+    var max = global.Validation.LIMITS[limitKey];
+    if (!max) {
+      return;
+    }
+    input.maxLength = max;
+    input.setAttribute("data-limit-bound", "1");
+
+    var counter = document.createElement("span");
+    counter.className = "text-limit-counter";
+    counter.setAttribute("aria-live", "polite");
+
+    var field = fieldWrapperForInput(input);
+    if (field) {
+      field.appendChild(counter);
+    } else if (input.closest("table.items")) {
+      input.insertAdjacentElement("afterend", counter);
+    } else {
+      var cell = input.closest("td");
+      if (cell) {
+        cell.appendChild(counter);
+      } else {
+        input.insertAdjacentElement("afterend", counter);
+      }
+    }
+
+    function refresh() {
+      updateTextLimitCounter(input, counter, max);
+    }
+    input.addEventListener("input", refresh);
+    refresh();
+  }
+
+  function bindNonNegativeDecimalInput(input, allowFraction) {
+    if (!input || input.getAttribute("data-nonneg-bound") === "1") {
+      return;
+    }
+    allowFraction = allowFraction !== false;
+    input.setAttribute("data-nonneg-bound", "1");
+    input.setAttribute("inputmode", allowFraction ? "decimal" : "numeric");
+
+    function blockKeys(event) {
+      var key = event.key;
+      if (key === "-" || key === "+" || key === "e" || key === "E") {
+        event.preventDefault();
+      }
+      if (!allowFraction && key === ".") {
+        event.preventDefault();
+      }
+    }
+
+    function onInput() {
+      var cleaned = global.Money.sanitizeNonNegativeNumber(input.value, allowFraction);
+      if (cleaned !== input.value) {
+        input.value = cleaned;
+      }
+    }
+
+    input.addEventListener("keydown", blockKeys);
+    input.addEventListener("input", onInput);
+  }
+
+  function bindNonNegativeDecimalInputs(root, selector, allowFraction) {
+    var scope = root || document;
+    scope.querySelectorAll(selector).forEach(function (input) {
+      bindNonNegativeDecimalInput(input, allowFraction);
+    });
+  }
+
+  function bindTextLimits(root) {
+    var scope = root || document;
+    scope.querySelectorAll("input[data-text-limit], textarea[data-text-limit]").forEach(function (input) {
+      bindTextLimitControl(input);
+    });
+  }
+
   function bindNav() {
     var toggle = $("btnNavToggle");
     var closeBtn = $("btnNavClose");
@@ -248,7 +337,10 @@
     });
   }
 
-  document.addEventListener("DOMContentLoaded", bindNav);
+  document.addEventListener("DOMContentLoaded", function () {
+    bindNav();
+    bindTextLimits();
+  });
 
   global.AppUI = {
     $: $,
@@ -258,6 +350,10 @@
     openNavDrawer: openNavDrawer,
     closeNavDrawer: closeNavDrawer,
     showValidationFields: showValidationFields,
-    clearValidationFields: clearValidationFields
+    clearValidationFields: clearValidationFields,
+    bindTextLimitControl: bindTextLimitControl,
+    bindTextLimits: bindTextLimits,
+    bindNonNegativeDecimalInput: bindNonNegativeDecimalInput,
+    bindNonNegativeDecimalInputs: bindNonNegativeDecimalInputs
   };
 })(window);

@@ -134,9 +134,6 @@
       var tr = el("tr");
       var nameCell = el("td");
       nameCell.appendChild(text((index + 1) + ". " + (item.name || "Item")));
-      if (item.description) {
-        nameCell.appendChild(el("div")).appendChild(text(item.description));
-      }
       tr.appendChild(nameCell);
 
       var qty = el("td", "center");

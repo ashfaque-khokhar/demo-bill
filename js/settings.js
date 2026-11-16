@@ -38,7 +38,7 @@
       dateFormat: "DD-MM-YYYY",
       paperSize: "A4",
       headings: {
-        item: "Description",
+        item: "Item",
         quantity: "Qty",
         unit: "Unit",
         rate: "Rate",

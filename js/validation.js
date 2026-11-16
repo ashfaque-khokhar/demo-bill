@@ -7,6 +7,43 @@
   var MOBILE_RE = /^[0-9]{10,15}$/;
   var STATE_CODE_RE = /^[0-9]{1,2}$/;
 
+  var LIMITS = {
+    businessName: 120,
+    mobile: 15,
+    address: 500,
+    email: 254,
+    website: 2048,
+    gstin: 15,
+    stateName: 60,
+    stateCode: 2,
+    upiId: 100,
+    bankDetails: 500,
+    disclaimer: 2000,
+    notes: 2000,
+    numberPattern: 80,
+    tableHeading: 40,
+    lineItemName: 200,
+    lineItemUnit: 32,
+    hsnSac: 8,
+    amountDigits: 7,
+    maxAmountMinor: 999999999,
+    maxAmountRupees: 9999999.99
+  };
+
+  var AMOUNT_CAP_MESSAGE = "cannot exceed ₹99,99,999.99 (7 digits).";
+
+  var HEADING_FIELD_IDS = {
+    item: "hItem",
+    quantity: "hQty",
+    unit: "hUnit",
+    rate: "hRate",
+    discount: "hDiscount",
+    tax: "hTax",
+    amount: "hAmount",
+    subtotal: "hSubtotal",
+    grandTotal: "hGrand"
+  };
+
   function fail(message, fields) {
     return { ok: false, message: message, fields: fields || {} };
   }
@@ -24,6 +61,22 @@
       return fail((label || "This field") + " is required.", fieldKey ? { [fieldKey]: "Required." } : {});
     }
     return null;
+  }
+
+  function maxLengthText(value, limitKey, fieldKey, label) {
+    var max = LIMITS[limitKey];
+    if (!max) {
+      return null;
+    }
+    var v = String(value == null ? "" : value);
+    if (v.length <= max) {
+      return null;
+    }
+    var shortLabel = label || "This field";
+    return fail(
+      shortLabel + " must be at most " + max + " characters.",
+      fieldKey ? { [fieldKey]: "Max " + max + " characters." } : {}
+    );
   }
 
   function optionalEmail(value, fieldKey) {
@@ -112,6 +165,19 @@
     return null;
   }
 
+  function maxAmountMinor(paise, label, fieldKey) {
+    var max = LIMITS.maxAmountMinor;
+    var n = Number(paise);
+    if (!isFinite(n) || n <= max) {
+      return null;
+    }
+    var shortLabel = label || "Amount";
+    return fail(
+      shortLabel + " " + AMOUNT_CAP_MESSAGE,
+      fieldKey ? { [fieldKey]: "Max 7 digits." } : {}
+    );
+  }
+
   function validateBusinessSettings(settings, fieldMap) {
     fieldMap = fieldMap || {};
     var id = function (logical) {
@@ -133,6 +199,18 @@
     if (reqAddr) {
       checks.push(reqAddr);
     }
+
+    checks.push(maxLengthText(settings.businessName, "businessName", id("businessName"), "Business name"));
+    checks.push(maxLengthText(settings.mobile, "mobile", id("businessMobile"), "Mobile"));
+    checks.push(maxLengthText(settings.address, "address", id("businessAddress"), "Address"));
+    checks.push(maxLengthText(settings.email, "email", id("businessEmail"), "Email"));
+    checks.push(maxLengthText(settings.website, "website", id("businessWebsite"), "Website"));
+    checks.push(maxLengthText(settings.gstin, "gstin", id("businessGstin"), "GSTIN"));
+    checks.push(maxLengthText(settings.supplierState, "stateName", id("supplierState"), "Supplier state"));
+    checks.push(maxLengthText(settings.supplierStateCode, "stateCode", id("supplierStateCode"), "State code"));
+    checks.push(maxLengthText(settings.upiId, "upiId", id("upiId"), "UPI ID"));
+    checks.push(maxLengthText(settings.bankDetails, "bankDetails", id("bankDetails"), "Bank details"));
+    checks.push(maxLengthText(settings.disclaimer, "disclaimer", id("disclaimer"), "Disclaimer"));
 
     checks.push(optionalEmail(settings.email, id("businessEmail")));
     checks.push(optionalWebsite(settings.website, id("businessWebsite")));
@@ -158,14 +236,28 @@
     if (pattern.indexOf("{SEQ}") < 0) {
       checks.push(fail("Number pattern must include {SEQ}.", { [id("numberPattern")]: "Include {SEQ}." }));
     }
+    checks.push(maxLengthText(pattern, "numberPattern", id("numberPattern"), "Number pattern"));
+
+    var headings = settings.headings || {};
+    Object.keys(HEADING_FIELD_IDS).forEach(function (key) {
+      checks.push(
+        maxLengthText(headings[key], "tableHeading", HEADING_FIELD_IDS[key], "Table heading")
+      );
+    });
 
     return mergeResults(checks.filter(Boolean));
   }
 
   function isMeaningfulLine(line) {
     var name = trim(line && line.name);
+    var unit = trim(line && line.unit);
     var rate = Number(line && line.rateMinor) || 0;
-    return !!(name || rate > 0);
+    var qty = Number(line && line.quantity);
+    var discType = (line && line.discountType) || "none";
+    if (name || unit || rate > 0 || (isFinite(qty) && qty > 0)) {
+      return true;
+    }
+    return discType !== "none";
   }
 
   function validateCustomer(customer, options, fieldMap) {
@@ -182,6 +274,14 @@
         checks.push(req);
       }
     }
+
+    checks.push(maxLengthText(customer && customer.name, "businessName", id("customerName"), "Customer name"));
+    checks.push(maxLengthText(customer && customer.address, "address", id("customerAddress"), "Address"));
+    checks.push(maxLengthText(customer && customer.email, "email", id("customerEmail"), "Email"));
+    checks.push(maxLengthText(customer && customer.gstin, "gstin", id("customerGstin"), "Customer GSTIN"));
+    checks.push(maxLengthText(customer && customer.mobile, "mobile", id("customerMobile"), "Mobile"));
+    checks.push(maxLengthText(customer && customer.state, "stateName", id("customerState"), "State"));
+    checks.push(maxLengthText(customer && customer.stateCode, "stateCode", id("customerStateCode"), "State code"));
 
     checks.push(optionalEmail(customer && customer.email, id("customerEmail")));
     checks.push(optionalGstin(customer && customer.gstin, id("customerGstin")));
@@ -217,6 +317,15 @@
       var row = i + 1;
       var prefix = "Row " + row + ": ";
 
+      if (!trim(line.name)) {
+        firstMessage = firstMessage || prefix + "item name is required.";
+        continue;
+      }
+      if (!trim(line.unit)) {
+        firstMessage = firstMessage || prefix + "unit is required.";
+        continue;
+      }
+
       var qty = Number(line.quantity);
       if (!isFinite(qty) || qty <= 0) {
         firstMessage = firstMessage || prefix + "quantity must be greater than zero.";
@@ -224,8 +333,13 @@
       }
 
       var rate = Number(line.rateMinor);
-      if (!isFinite(rate) || rate < 0) {
-        firstMessage = firstMessage || prefix + "rate must be zero or greater.";
+      if (!isFinite(rate) || rate <= 0) {
+        firstMessage = firstMessage || prefix + "rate must be greater than zero.";
+        continue;
+      }
+      var rateCap = maxAmountMinor(rate, prefix + "rate", null);
+      if (rateCap) {
+        firstMessage = firstMessage || rateCap.message;
         continue;
       }
 
@@ -237,12 +351,42 @@
 
       var discType = line.discountType || "none";
       var discVal = Number(line.discountValue);
-      if (!isFinite(discVal) || discVal < 0) {
+      if (discType !== "none") {
+        if (!isFinite(discVal) || discVal <= 0) {
+          firstMessage =
+            firstMessage ||
+            prefix + "discount value must be greater than zero when a discount type is selected.";
+          continue;
+        }
+        if (discType === "percent" && discVal > 100) {
+          firstMessage = firstMessage || prefix + "discount percent cannot exceed 100.";
+          continue;
+        }
+        if (discType === "fixed" && global.Money) {
+          var discCap = maxAmountMinor(global.Money.toPaise(discVal), prefix + "discount", null);
+          if (discCap) {
+            firstMessage = firstMessage || discCap.message;
+            continue;
+          }
+        }
+      } else if (!isFinite(discVal) || discVal < 0) {
         firstMessage = firstMessage || prefix + "discount must be zero or greater.";
         continue;
       }
-      if (discType === "percent" && discVal > 100) {
-        firstMessage = firstMessage || prefix + "discount percent cannot exceed 100.";
+
+      var nameTooLong = maxLengthText(line.name, "lineItemName", null, prefix + "name");
+      if (nameTooLong) {
+        firstMessage = firstMessage || nameTooLong.message;
+        continue;
+      }
+      var unitTooLong = maxLengthText(line.unit, "lineItemUnit", null, prefix + "unit");
+      if (unitTooLong) {
+        firstMessage = firstMessage || unitTooLong.message;
+        continue;
+      }
+      var hsnTooLong = maxLengthText(line.hsnSac, "hsnSac", null, prefix + "HSN/SAC");
+      if (hsnTooLong) {
+        firstMessage = firstMessage || hsnTooLong.message;
         continue;
       }
     }
@@ -263,11 +407,19 @@
     if (type === "none") {
       return ok();
     }
-    if (!isFinite(value) || value < 0) {
-      return fail("Invoice discount must be zero or greater.", { invoiceDiscountValue: "Invalid value." });
+    if (!isFinite(value) || value <= 0) {
+      return fail("Invoice discount must be greater than zero when a discount type is selected.", {
+        invoiceDiscountValue: "Must be greater than zero."
+      });
     }
     if (type === "percent" && value > 100) {
       return fail("Invoice discount percent cannot exceed 100.", { invoiceDiscountValue: "Max 100%." });
+    }
+    if (type === "fixed" && global.Money) {
+      var invCap = maxAmountMinor(global.Money.toPaise(value), "Invoice discount", "invoiceDiscountValue");
+      if (invCap) {
+        return invCap;
+      }
     }
     return ok();
   }
@@ -283,6 +435,7 @@
     }));
     checks.push(validateLineItems(doc.items));
     checks.push(validateInvoiceDiscount(doc));
+    checks.push(maxLengthText(doc.notes, "notes", "notes", "Notes"));
 
     if (gstEnabled) {
       var supplierState = trim(settings && settings.supplierState);
@@ -291,7 +444,7 @@
       }
     }
 
-    return mergeResults(checks);
+    return mergeResults(checks.filter(Boolean));
   }
 
   function validateCatalogueItem(item) {
@@ -300,9 +453,14 @@
     if (req) {
       checks.push(req);
     }
+    checks.push(maxLengthText(item && item.name, "businessName", null, "Item name"));
+    checks.push(maxLengthText(item && item.unit, "lineItemUnit", null, "Unit"));
+    checks.push(maxLengthText(item && item.hsnSac, "hsnSac", null, "HSN/SAC"));
     var rate = Number(item && item.defaultRateMinor);
     if (!isFinite(rate) || rate < 0) {
       checks.push(fail("Default rate must be zero or greater."));
+    } else {
+      checks.push(maxAmountMinor(rate, "Default rate", null));
     }
     var tax = Number(item && item.defaultTaxRate);
     if (!isFinite(tax) || tax < 0 || tax > 100) {
@@ -319,8 +477,11 @@
   }
 
   global.Validation = {
+    LIMITS: LIMITS,
     trim: trim,
     requiredText: requiredText,
+    maxLengthText: maxLengthText,
+    maxAmountMinor: maxAmountMinor,
     optionalEmail: optionalEmail,
     optionalGstin: optionalGstin,
     optionalMobile: optionalMobile,

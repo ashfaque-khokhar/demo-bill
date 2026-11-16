@@ -33,6 +33,13 @@
     if (!isGenerated(normalized) && !normalized.numberReserved) {
       normalized.documentNumber = "";
     }
+    if (Array.isArray(normalized.items)) {
+      normalized.items.forEach(function (line) {
+        if (line && "description" in line) {
+          delete line.description;
+        }
+      });
+    }
     return normalized;
   }
 
@@ -93,7 +100,6 @@
         id: item.id,
         catalogueItemId: item.catalogueItemId,
         name: item.name,
-        description: item.description,
         quantity: item.quantity,
         unit: item.unit,
         rateMinor: item.rateMinor,

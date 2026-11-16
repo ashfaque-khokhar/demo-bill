@@ -65,7 +65,6 @@
         id: src.id,
         catalogueItemId: src.catalogueItemId || null,
         name: String(src.name || ""),
-        description: String(src.description || ""),
         quantity: safeNumber(src.quantity, 0),
         unit: String(src.unit || "Piece"),
         rateMinor: Money.roundPaise(src.rateMinor),

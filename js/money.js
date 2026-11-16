@@ -1,6 +1,23 @@
 (function (global) {
   "use strict";
 
+  function sanitizeNonNegativeNumber(raw, allowFraction) {
+    var s = String(raw == null ? "" : raw);
+    var out = "";
+    var seenDot = false;
+    var i;
+    for (i = 0; i < s.length; i += 1) {
+      var c = s.charAt(i);
+      if (c >= "0" && c <= "9") {
+        out += c;
+      } else if (allowFraction && c === "." && !seenDot) {
+        seenDot = true;
+        out += c;
+      }
+    }
+    return out;
+  }
+
   function toPaise(rupees) {
     var n = Number(rupees);
     if (!isFinite(n) || n < 0) {
@@ -105,6 +122,7 @@
   }
 
   global.Money = {
+    sanitizeNonNegativeNumber: sanitizeNonNegativeNumber,
     toPaise: toPaise,
     fromPaise: fromPaise,
     roundPaise: roundPaise,

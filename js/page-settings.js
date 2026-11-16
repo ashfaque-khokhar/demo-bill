@@ -93,7 +93,7 @@
     s.numbering.sequencePadding = Number($("sequencePadding").value) || 4;
     s.numbering.sequenceStart = Number($("sequenceStart").value) || 1;
     s.numbering.resetRule = $("resetRule").value;
-    s.headings.item = $("hItem").value.trim() || "Description";
+    s.headings.item = $("hItem").value.trim() || "Item";
     s.headings.quantity = $("hQty").value.trim() || "Qty";
     s.headings.unit = $("hUnit").value.trim() || "Unit";
     s.headings.rate = $("hRate").value.trim() || "Rate";
@@ -245,13 +245,41 @@
       if (!name) {
         return;
       }
+      var maxName = Validation.LIMITS.businessName;
+      if (name.length > maxName) {
+        setStatus("Item name must be at most " + maxName + " characters.", "error");
+        return;
+      }
       var rate = window.prompt("Default rate (₹)", "0");
+      if (rate == null) {
+        return;
+      }
+      rate = Money.sanitizeNonNegativeNumber(rate, true);
+      var rateMinor = Money.toPaise(rate);
+      var rateCap = Validation.maxAmountMinor(rateMinor, "Default rate", null);
+      if (rateCap) {
+        setStatus(rateCap.message, "error");
+        return;
+      }
+      var unit = Items.pickUnitViaPrompt("1");
+      if (!unit) {
+        return;
+      }
+      var maxUnit = Validation.LIMITS.lineItemUnit;
+      if (unit.length > maxUnit) {
+        setStatus("Unit must be at most " + maxUnit + " characters.", "error");
+        return;
+      }
+      var defaultTaxRate = Items.pickGstViaPrompt("1");
+      if (defaultTaxRate == null) {
+        return;
+      }
       try {
         await Items.saveCatalogueItem({
           name: name.trim(),
-          defaultRateMinor: Money.toPaise(rate),
-          unit: "Piece",
-          defaultTaxRate: 0
+          defaultRateMinor: rateMinor,
+          unit: unit,
+          defaultTaxRate: defaultTaxRate
         });
       } catch (error) {
         setStatus(error.message || "Could not add catalogue item.", "error");

@@ -97,15 +97,15 @@
           <div class="grid-2">
             <div class="field">
               <label for="businessName">Business name *</label>
-              <input id="businessName" type="text" autocomplete="organization">
+              <input id="businessName" type="text" autocomplete="organization" data-text-limit="businessName">
             </div>
             <div class="field">
               <label for="businessMobile">Mobile *</label>
-              <input id="businessMobile" type="tel" autocomplete="tel">
+              <input id="businessMobile" type="tel" autocomplete="tel" data-text-limit="mobile">
             </div>
             <div class="field full">
               <label for="businessAddress">Address *</label>
-              <textarea id="businessAddress" rows="2" autocomplete="street-address"></textarea>
+              <textarea id="businessAddress" rows="2" autocomplete="street-address" data-text-limit="address"></textarea>
             </div>
           </div>
           </div>
@@ -120,11 +120,11 @@
           <div class="grid-2">
             <div class="field">
               <label for="businessEmail">Email</label>
-              <input id="businessEmail" type="email" autocomplete="email">
+              <input id="businessEmail" type="email" autocomplete="email" data-text-limit="email">
             </div>
             <div class="field">
               <label for="businessWebsite">Website</label>
-              <input id="businessWebsite" type="text" autocomplete="url">
+              <input id="businessWebsite" type="text" autocomplete="url" data-text-limit="website">
             </div>
           </div>
           </div>
@@ -139,15 +139,15 @@
           <div class="grid-2">
             <div class="field">
               <label for="businessGstin">GSTIN</label>
-              <input id="businessGstin" type="text">
+              <input id="businessGstin" type="text" data-text-limit="gstin">
             </div>
             <div class="field">
               <label for="supplierState">Supplier state</label>
-              <input id="supplierState" type="text" list="stateList">
+              <input id="supplierState" type="text" list="stateList" data-text-limit="stateName">
             </div>
             <div class="field">
               <label for="supplierStateCode">Supplier state code</label>
-              <input id="supplierStateCode" type="text" maxlength="2">
+              <input id="supplierStateCode" type="text" data-text-limit="stateCode">
             </div>
           </div>
           </div>
@@ -162,15 +162,15 @@
           <div class="grid-2">
             <div class="field">
               <label for="upiId">UPI ID (optional)</label>
-              <input id="upiId" type="text">
+              <input id="upiId" type="text" data-text-limit="upiId">
             </div>
             <div class="field">
               <label for="bankDetails">Bank details (optional)</label>
-              <input id="bankDetails" type="text">
+              <input id="bankDetails" type="text" data-text-limit="bankDetails">
             </div>
             <div class="field full">
               <label for="disclaimer">Disclaimer / terms</label>
-              <textarea id="disclaimer" rows="3"></textarea>
+              <textarea id="disclaimer" rows="3" data-text-limit="disclaimer"></textarea>
             </div>
           </div>
           </div>
@@ -226,7 +226,7 @@
           <div class="grid-2">
             <div class="field">
               <label for="numberPattern">Pattern</label>
-              <input id="numberPattern" type="text" value="{PREFIX}/{YYYY}/{SEQ}">
+              <input id="numberPattern" type="text" value="{PREFIX}/{YYYY}/{SEQ}" data-text-limit="numberPattern">
             </div>
             <div class="field">
               <label for="sequencePadding">Sequence padding</label>
@@ -255,15 +255,15 @@
           </summary>
           <div class="settings-section__body">
           <div class="grid-headings">
-            <div class="field"><label for="hItem">Item</label><input id="hItem" type="text"></div>
-            <div class="field"><label for="hQty">Quantity</label><input id="hQty" type="text"></div>
-            <div class="field"><label for="hUnit">Unit</label><input id="hUnit" type="text"></div>
-            <div class="field"><label for="hRate">Rate</label><input id="hRate" type="text"></div>
-            <div class="field"><label for="hDiscount">Discount</label><input id="hDiscount" type="text"></div>
-            <div class="field"><label for="hTax">Tax</label><input id="hTax" type="text"></div>
-            <div class="field"><label for="hAmount">Amount</label><input id="hAmount" type="text"></div>
-            <div class="field"><label for="hSubtotal">Subtotal</label><input id="hSubtotal" type="text"></div>
-            <div class="field"><label for="hGrand">Grand total</label><input id="hGrand" type="text"></div>
+            <div class="field"><label for="hItem">Item</label><input id="hItem" type="text" data-text-limit="tableHeading"></div>
+            <div class="field"><label for="hQty">Quantity</label><input id="hQty" type="text" data-text-limit="tableHeading"></div>
+            <div class="field"><label for="hUnit">Unit</label><input id="hUnit" type="text" data-text-limit="tableHeading"></div>
+            <div class="field"><label for="hRate">Rate</label><input id="hRate" type="text" data-text-limit="tableHeading"></div>
+            <div class="field"><label for="hDiscount">Discount</label><input id="hDiscount" type="text" data-text-limit="tableHeading"></div>
+            <div class="field"><label for="hTax">Tax</label><input id="hTax" type="text" data-text-limit="tableHeading"></div>
+            <div class="field"><label for="hAmount">Amount</label><input id="hAmount" type="text" data-text-limit="tableHeading"></div>
+            <div class="field"><label for="hSubtotal">Subtotal</label><input id="hSubtotal" type="text" data-text-limit="tableHeading"></div>
+            <div class="field"><label for="hGrand">Grand total</label><input id="hGrand" type="text" data-text-limit="tableHeading"></div>
           </div>
           </div>
         </details>

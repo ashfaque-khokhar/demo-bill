@@ -614,6 +614,29 @@ textarea:focus-visible {
   line-height: 1.35;
 }
 
+.text-limit-counter {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.35;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.text-limit-counter--full {
+  color: var(--danger);
+}
+
+table.items .text-limit-counter {
+  font-size: 0.68rem;
+  line-height: 1.2;
+}
+
+
+.document-card__customer-fields .field--compact .text-limit-counter {
+  margin-top: -2px;
+}
+
 .field-error {
   margin: 0 0 4px;
   font-size: 0.78rem;
@@ -717,10 +740,7 @@ table.items input::placeholder {
   opacity: 0.85;
 }
 
-table.items .item-desc-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+table.items .item-name-cell {
   min-width: 9rem;
 }
 
@@ -742,9 +762,46 @@ table.items .item-disc-cell .item-disc-value {
   min-width: 0;
 }
 
+table.items .item-unit-cell,
+table.items .item-gst-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 5.5rem;
+}
+
+table.items .item-unit-cell .item-unit {
+  flex: 0 0 auto;
+  min-width: 3.25rem;
+  width: auto;
+}
+
+table.items .item-unit-other--hidden,
+table.items .item-gst-other--hidden {
+  display: none;
+}
+
+table.items .item-unit-other:not(.item-unit-other--hidden),
+table.items .item-gst-other:not(.item-gst-other--hidden) {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+
+table.items .item-gst-cell .item-gst {
+  flex: 0 0 auto;
+  min-width: 3.25rem;
+  width: auto;
+}
+
 table.items th:nth-child(2),
 table.items td:nth-child(2) {
   min-width: 3.25rem;
+}
+
+table.items th:nth-child(3),
+table.items td:nth-child(3) {
+  min-width: 5.5rem;
 }
 
 table.items th:nth-child(4),
@@ -758,7 +815,7 @@ table.items td:nth-child(8) {
 
 table.items .item-qty,
 table.items .item-rate,
-table.items .item-gst,
+table.items .item-gst-other:not(.item-gst-other--hidden),
 table.items .item-disc-value {
   text-align: right;
   font-variant-numeric: tabular-nums;

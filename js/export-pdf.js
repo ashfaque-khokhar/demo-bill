@@ -137,7 +137,7 @@
     pdf.setFillColor(248, 250, 252);
     pdf.rect(margin, y - 4, contentWidth, 7, "F");
     pdf.setFontSize(8);
-    pdf.text("Description", colX.item, y);
+    pdf.text((business.headings && business.headings.item) || "Item", colX.item, y);
     pdf.text("Qty", colX.qty, y);
     pdf.text("Rate", colX.rate, y);
     if (showTax) {

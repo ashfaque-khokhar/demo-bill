@@ -62,7 +62,7 @@
             <table class="items" id="itemsTable">
               <thead>
                 <tr>
-                  <th>Description</th>
+                  <th>Item</th>
                   <th>Qty</th>
                   <th>Unit</th>
                   <th>Rate</th>
@@ -96,15 +96,15 @@
                 <div class="document-card__customer-fields">
                   <div class="field field--compact">
                     <label for="customerName">Name *</label>
-                    <input id="customerName" type="text" autocomplete="name">
+                    <input id="customerName" type="text" autocomplete="name" data-text-limit="businessName">
                   </div>
                   <div class="field field--compact">
                     <label for="customerMobile">Mobile</label>
-                    <input id="customerMobile" type="tel" autocomplete="tel">
+                    <input id="customerMobile" type="tel" autocomplete="tel" data-text-limit="mobile">
                   </div>
                   <div class="field field--compact full">
                     <label for="customerAddress">Address</label>
-                    <textarea id="customerAddress" rows="1" autocomplete="street-address"></textarea>
+                    <textarea id="customerAddress" rows="1" autocomplete="street-address" data-text-limit="address"></textarea>
                   </div>
                 </div>
               </div>
@@ -119,19 +119,19 @@
                 <div class="grid-2">
                   <div class="field">
                     <label for="customerEmail">Email</label>
-                    <input id="customerEmail" type="email">
+                    <input id="customerEmail" type="email" data-text-limit="email">
                   </div>
                   <div class="field">
                     <label for="customerGstin">Customer GSTIN</label>
-                    <input id="customerGstin" type="text">
+                    <input id="customerGstin" type="text" data-text-limit="gstin">
                   </div>
                   <div class="field">
                     <label for="customerState">State</label>
-                    <input id="customerState" type="text" list="stateList">
+                    <input id="customerState" type="text" list="stateList" data-text-limit="stateName">
                   </div>
                   <div class="field">
                     <label for="customerStateCode">State code</label>
-                    <input id="customerStateCode" type="text" maxlength="2">
+                    <input id="customerStateCode" type="text" data-text-limit="stateCode">
                   </div>
                 </div>
               </div>
@@ -173,7 +173,7 @@
                   </div>
                   <div class="field full">
                     <label for="notes">Notes / reference</label>
-                    <textarea id="notes" rows="2"></textarea>
+                    <textarea id="notes" rows="2" data-text-limit="notes"></textarea>
                   </div>
                 </div>
               </div>
@@ -263,15 +263,15 @@
           <div class="grid-2">
             <div class="field">
               <label for="onboardBusinessName">Business name *</label>
-              <input id="onboardBusinessName" type="text" autocomplete="organization">
+              <input id="onboardBusinessName" type="text" autocomplete="organization" data-text-limit="businessName">
             </div>
             <div class="field">
               <label for="onboardBusinessMobile">Mobile *</label>
-              <input id="onboardBusinessMobile" type="tel" autocomplete="tel">
+              <input id="onboardBusinessMobile" type="tel" autocomplete="tel" data-text-limit="mobile">
             </div>
             <div class="field full">
               <label for="onboardBusinessAddress">Address *</label>
-              <textarea id="onboardBusinessAddress" rows="2" autocomplete="street-address"></textarea>
+              <textarea id="onboardBusinessAddress" rows="2" autocomplete="street-address" data-text-limit="address"></textarea>
             </div>
           </div>
         </section>
@@ -282,23 +282,23 @@
           <div class="grid-2">
             <div class="field">
               <label for="onboardBusinessEmail">Email</label>
-              <input id="onboardBusinessEmail" type="email" autocomplete="email">
+              <input id="onboardBusinessEmail" type="email" autocomplete="email" data-text-limit="email">
             </div>
             <div class="field">
               <label for="onboardBusinessWebsite">Website</label>
-              <input id="onboardBusinessWebsite" type="text" autocomplete="url">
+              <input id="onboardBusinessWebsite" type="text" autocomplete="url" data-text-limit="website">
             </div>
             <div class="field">
               <label for="onboardBusinessGstin">GSTIN</label>
-              <input id="onboardBusinessGstin" type="text">
+              <input id="onboardBusinessGstin" type="text" data-text-limit="gstin">
             </div>
             <div class="field">
               <label for="onboardSupplierState">Supplier state</label>
-              <input id="onboardSupplierState" type="text" list="stateList">
+              <input id="onboardSupplierState" type="text" list="stateList" data-text-limit="stateName">
             </div>
             <div class="field">
               <label for="onboardSupplierStateCode">Supplier state code</label>
-              <input id="onboardSupplierStateCode" type="text" maxlength="2">
+              <input id="onboardSupplierStateCode" type="text" data-text-limit="stateCode">
             </div>
           </div>
         </section>
@@ -309,11 +309,11 @@
           <div class="grid-2">
             <div class="field">
               <label for="onboardUpiId">UPI ID</label>
-              <input id="onboardUpiId" type="text">
+              <input id="onboardUpiId" type="text" data-text-limit="upiId">
             </div>
             <div class="field full">
               <label for="onboardBankDetails">Bank details</label>
-              <input id="onboardBankDetails" type="text">
+              <input id="onboardBankDetails" type="text" data-text-limit="bankDetails">
             </div>
           </div>
         </section>
