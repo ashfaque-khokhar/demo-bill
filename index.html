@@ -43,6 +43,36 @@
   <main class="page" aria-label="Invoice editor">
     <div class="layout" id="editorLayout">
       <div class="editor-pane">
+        <div class="editor-split">
+        <div class="card card--items">
+          <div class="card-toolbar panel-controls">
+            <h2 class="card-toolbar__title">Line items</h2>
+            <div class="card-toolbar__actions">
+              <button type="button" class="btn secondary" id="btnAddItem">Add row</button>
+              <button type="button" class="btn secondary" id="btnPickCatalogue">Catalogue</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="items" id="itemsTable">
+              <thead>
+                <tr>
+                  <th>Description</th>
+                  <th>Qty</th>
+                  <th>Unit</th>
+                  <th>Rate</th>
+                  <th>Disc</th>
+                  <th>GST %</th>
+                  <th>HSN</th>
+                  <th>Amount</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody"></tbody>
+            </table>
+          </div>
+          <div class="totals-box" id="totalsBox"></div>
+        </div>
+
         <div class="card document-card">
           <div class="document-card__header">
             <label class="document-card__type-label" for="documentType">Document type</label>
@@ -144,34 +174,6 @@
             </details>
           </div>
         </div>
-
-        <div class="card card--items" style="margin-top:16px;">
-          <div class="card-toolbar panel-controls">
-            <h2 class="card-toolbar__title">Line items</h2>
-            <div class="card-toolbar__actions">
-              <button type="button" class="btn secondary" id="btnAddItem">Add row</button>
-              <button type="button" class="btn secondary" id="btnPickCatalogue">Catalogue</button>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table class="items" id="itemsTable">
-              <thead>
-                <tr>
-                  <th>Description</th>
-                  <th>Qty</th>
-                  <th>Unit</th>
-                  <th>Rate</th>
-                  <th>Disc</th>
-                  <th>GST %</th>
-                  <th>HSN</th>
-                  <th>Amount</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="itemsBody"></tbody>
-            </table>
-          </div>
-          <div class="totals-box" id="totalsBox"></div>
         </div>
 
         <div class="editor-action-bar no-print" role="toolbar" aria-label="Document actions">
