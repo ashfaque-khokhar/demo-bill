@@ -51,6 +51,7 @@
       logoWidth: 120,
       logoHeight: 48,
       logoAlignment: "left",
+      onboardingCompleted: false,
       updatedAt: 0
     };
   }

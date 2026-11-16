@@ -30,6 +30,43 @@
     node.className = "status-bar no-print " + (type || "info");
   }
 
+  function setNavActive(name) {
+    document.querySelectorAll(".nav-drawer-link[data-panel]").forEach(function (btn) {
+      btn.classList.toggle("active", btn.getAttribute("data-panel") === name);
+    });
+  }
+
+  function openNavDrawer() {
+    var drawer = $("navDrawer");
+    var backdrop = $("navDrawerBackdrop");
+    var toggle = $("btnNavToggle");
+    if (!drawer || !backdrop || !toggle) return;
+    drawer.classList.add("open");
+    backdrop.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+    backdrop.setAttribute("aria-hidden", "false");
+    document.body.classList.add("nav-open");
+    toggle.setAttribute("aria-expanded", "true");
+    toggle.setAttribute("aria-label", "Close menu");
+    var first = drawer.querySelector(".nav-drawer-link");
+    if (first) first.focus();
+  }
+
+  function closeNavDrawer() {
+    var drawer = $("navDrawer");
+    var backdrop = $("navDrawerBackdrop");
+    var toggle = $("btnNavToggle");
+    if (!drawer || !backdrop || !toggle) return;
+    drawer.classList.remove("open");
+    backdrop.classList.remove("open");
+    drawer.setAttribute("aria-hidden", "true");
+    backdrop.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("nav-open");
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Open menu");
+    toggle.focus();
+  }
+
   function showPanel(name) {
     ["editor", "settings", "history", "backup"].forEach(function (key) {
       var panel = $("panel-" + key);
@@ -37,6 +74,7 @@
         panel.classList.toggle("active", key === name);
       }
     });
+    setNavActive(name);
     if (name === "history") {
       refreshHistory();
     }
@@ -604,9 +642,37 @@
   }
 
   function bindEvents() {
+    var toggle = $("btnNavToggle");
+    var closeBtn = $("btnNavClose");
+    var backdrop = $("navDrawerBackdrop");
+
+    if (toggle) {
+      toggle.addEventListener("click", function () {
+        if (document.body.classList.contains("nav-open")) {
+          closeNavDrawer();
+        } else {
+          openNavDrawer();
+        }
+      });
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeNavDrawer);
+    }
+    if (backdrop) {
+      backdrop.addEventListener("click", closeNavDrawer);
+    }
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && document.body.classList.contains("nav-open")) {
+        closeNavDrawer();
+      }
+    });
+
     document.querySelectorAll("[data-panel]").forEach(function (btn) {
       btn.addEventListener("click", function () {
         showPanel(btn.getAttribute("data-panel"));
+        if (btn.classList.contains("nav-drawer-link")) {
+          closeNavDrawer();
+        }
       });
     });
 
@@ -809,7 +875,28 @@
       await loadLogo(state.settings);
       state.catalogue = await Items.listCatalogue();
       await startNewDocument("tax-invoice");
-      setStatus("Ready. Data stays in this browser — use Backup regularly.", "info");
+      var started = Onboarding.maybeStart(state.settings, {
+        onStatus: setStatus,
+        onSaved: function (settings) {
+          state.settings = settings;
+          fillSettingsForm();
+          refreshPreview();
+        },
+        onComplete: function (settings) {
+          state.settings = settings;
+          fillSettingsForm();
+          refreshPreview();
+        },
+        onLogoUpload: handleLogoUpload,
+        getLogoUrl: function () {
+          return state.logoUrl;
+        }
+      });
+      if (!started) {
+        setStatus("Ready. Data stays in this browser — use Backup regularly.", "info");
+      } else {
+        setStatus("Complete setup, or skip steps to start billing.", "info");
+      }
     } catch (error) {
       setStatus(error.message || "Could not start the app.", "error");
     }

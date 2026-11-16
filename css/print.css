@@ -9,11 +9,14 @@
 
   .app-header,
   .status-bar,
-  .nav-actions,
+  .nav-toggle,
+  .nav-drawer,
+  .nav-drawer-backdrop,
   .toolbar,
   .editor-pane,
   .panel-controls,
   .modal-backdrop,
+  .onboarding-overlay,
   .no-print {
     display: none !important;
   }
