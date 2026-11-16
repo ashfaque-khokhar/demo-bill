@@ -22,7 +22,9 @@
     notes: 2000,
     numberPattern: 80,
     tableHeading: 40,
-    lineItemName: 200,
+    lineItemName: 8,
+    lineItemQuantity: 4,
+    lineItemRate: 6,
     lineItemUnit: 32,
     hsnSac: 8,
     amountDigits: 7,
@@ -331,10 +333,26 @@
         firstMessage = firstMessage || prefix + "quantity must be greater than zero.";
         continue;
       }
+      var qtyTooLong = maxLengthText(line.quantity, "lineItemQuantity", null, prefix + "quantity");
+      if (qtyTooLong) {
+        firstMessage = firstMessage || qtyTooLong.message;
+        continue;
+      }
 
       var rate = Number(line.rateMinor);
       if (!isFinite(rate) || rate <= 0) {
         firstMessage = firstMessage || prefix + "rate must be greater than zero.";
+        continue;
+      }
+      var rateDisplay =
+        line.rateInput != null && String(line.rateInput).trim() !== ""
+          ? String(line.rateInput).trim()
+          : global.Money
+            ? String(global.Money.fromPaise(rate))
+            : String(rate);
+      var rateTooLong = maxLengthText(rateDisplay, "lineItemRate", null, prefix + "rate");
+      if (rateTooLong) {
+        firstMessage = firstMessage || rateTooLong.message;
         continue;
       }
       var rateCap = maxAmountMinor(rate, prefix + "rate", null);
@@ -453,7 +471,7 @@
     if (req) {
       checks.push(req);
     }
-    checks.push(maxLengthText(item && item.name, "businessName", null, "Item name"));
+    checks.push(maxLengthText(item && item.name, "lineItemName", null, "Item name"));
     checks.push(maxLengthText(item && item.unit, "lineItemUnit", null, "Unit"));
     checks.push(maxLengthText(item && item.hsnSac, "hsnSac", null, "HSN/SAC"));
     var rate = Number(item && item.defaultRateMinor);

@@ -108,12 +108,7 @@
     }
     var v = sel.value;
     if (!v) {
-      return "Piece";
-    }
-    if (v === UNIT_SELECT_OTHER) {
-      var other = tr.querySelector(".item-unit-other");
-      var custom = other ? String(other.value || "").trim() : "";
-      return custom || "Piece";
+      return "";
     }
     return String(v).trim() || "Piece";
   }

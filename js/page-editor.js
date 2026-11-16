@@ -360,10 +360,56 @@
     $("invoiceDiscountValue").value = (doc.discount && doc.discount.value) || 0;
     $("notes").value = doc.notes || "";
     renderItemsTable(doc.items || []);
+    ensureTrailingEmptyRow();
     syncDocumentCardUi();
     syncCustomerSectionUi(true);
     applyEditorMode();
     refreshPreview();
+  }
+
+  function isRowComplete(tr) {
+    if (!tr) {
+      return false;
+    }
+    var nameEl = tr.querySelector(".item-name");
+    if (!nameEl || !nameEl.value.trim()) {
+      return false;
+    }
+    var unitSel = tr.querySelector(".item-unit");
+    if (!unitSel || !unitSel.value) {
+      return false;
+    }
+    var qty = Number(tr.querySelector(".item-qty") && tr.querySelector(".item-qty").value);
+    if (!isFinite(qty) || qty <= 0) {
+      return false;
+    }
+    var rateInput = tr.querySelector(".item-rate") ? tr.querySelector(".item-rate").value.trim() : "";
+    if (!rateInput || Money.toPaise(rateInput) <= 0) {
+      return false;
+    }
+    return true;
+  }
+
+  function appendEmptyItemRow() {
+    var body = $("itemsBody");
+    if (!body) {
+      return;
+    }
+    body.appendChild(buildItemRow(Items.createLine({ displayEmpty: true })));
+  }
+
+  function ensureTrailingEmptyRow() {
+    if (DocumentEditor.isGenerated(state.document)) {
+      return;
+    }
+    var rows = document.querySelectorAll("#itemsBody tr");
+    if (!rows.length) {
+      appendEmptyItemRow();
+      return;
+    }
+    if (isRowComplete(rows[rows.length - 1])) {
+      appendEmptyItemRow();
+    }
   }
 
   function sanitizeLineFromTable(line) {
@@ -392,6 +438,7 @@
         name: tr.querySelector(".item-name").value.trim(),
         quantity: Number(tr.querySelector(".item-qty").value) || 1,
         unit: Items.readUnitFromRow(tr),
+        rateInput: tr.querySelector(".item-rate").value.trim(),
         rateMinor: Money.toPaise(tr.querySelector(".item-rate").value),
         discountType: discountType,
         discountValue: discountValue,
@@ -430,9 +477,6 @@
         input.setAttribute("data-text-limit", textLimitKey);
       }
       if (className === "item-rate") {
-        input.min = "0";
-        input.step = "0.01";
-        input.max = String(Validation.LIMITS.maxAmountRupees);
         if (AppUI.bindNonNegativeDecimalInput) {
           AppUI.bindNonNegativeDecimalInput(input, true);
         }
@@ -475,7 +519,7 @@
     nameTd.appendChild(name);
     tr.appendChild(nameTd);
 
-    tr.appendChild(cellInput("item-qty", item.quantity, "number", "1"));
+    tr.appendChild(cellInput("item-qty", item.quantity, "text", "1", "lineItemQuantity"));
 
     var unitTd = document.createElement("td");
     unitTd.className = "item-unit-cell";
@@ -496,40 +540,25 @@
       opt.textContent = label;
       unitSelect.appendChild(opt);
     });
-    var unitOtherOpt = document.createElement("option");
-    unitOtherOpt.value = Items.UNIT_SELECT_OTHER;
-    unitOtherOpt.textContent = "Other";
-    unitSelect.appendChild(unitOtherOpt);
-    var unitOther = document.createElement("input");
-    unitOther.type = "text";
-    unitOther.className = "item-unit-other item-unit-other--hidden";
-    unitOther.setAttribute("data-text-limit", "lineItemUnit");
-    unitOther.placeholder = "Custom";
-    if (unitResolved.mode === "preset") {
+    if (unitResolved.mode === "other") {
+      var customOpt = document.createElement("option");
+      customOpt.value = unitResolved.value;
+      customOpt.textContent = unitResolved.value;
+      unitSelect.appendChild(customOpt);
       unitSelect.value = unitResolved.value;
-    } else if (unitResolved.mode === "other") {
-      unitSelect.value = Items.UNIT_SELECT_OTHER;
-      unitOther.value = unitResolved.value;
-      unitOther.classList.remove("item-unit-other--hidden");
+    } else if (unitResolved.mode === "preset") {
+      unitSelect.value = unitResolved.value;
     }
-    function syncUnitOtherVisibility() {
-      var isOther = unitSelect.value === Items.UNIT_SELECT_OTHER;
-      unitOther.classList.toggle("item-unit-other--hidden", !isOther);
-    }
-    unitSelect.addEventListener("change", function () {
-      syncUnitOtherVisibility();
-      onEditorChange();
-    });
-    unitOther.addEventListener("input", onEditorChange);
+    unitSelect.addEventListener("change", onEditorChange);
     unitTd.appendChild(unitSelect);
-    unitTd.appendChild(unitOther);
     tr.appendChild(unitTd);
 
     tr.appendChild(cellInput(
       "item-rate",
       Money.fromPaise(item.rateMinor || 0).toFixed(2),
-      "number",
-      "0.00"
+      "text",
+      "0.00",
+      "lineItemRate"
     ));
 
     var discTd = document.createElement("td");
@@ -625,33 +654,16 @@
     tr.appendChild(amountTd);
 
     var actions = document.createElement("td");
+    actions.className = "item-row-actions";
     var wrap = document.createElement("div");
     wrap.className = "row-actions";
-    var dup = document.createElement("button");
-    dup.type = "button";
-    dup.className = "btn ghost";
-    dup.textContent = "Copy";
-    dup.addEventListener("click", function () {
-      syncFormToDocument();
-      var copy = Items.createLine(Object.assign({}, item, { id: Items.createId() }));
-      delete copy.displayEmpty;
-      state.document.items.push(copy);
-      renderItemsTable(state.document.items);
-      syncFormToDocument();
-      refreshPreview();
-    });
-    var saveCat = document.createElement("button");
-    saveCat.type = "button";
-    saveCat.className = "btn ghost";
-    saveCat.textContent = "Save";
-    saveCat.title = "Save to catalogue";
-    saveCat.addEventListener("click", function () {
-      saveLineToCatalogue(tr);
-    });
     var remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "btn ghost";
-    remove.textContent = "Del";
+    remove.className = "btn ghost row-action-delete";
+    remove.setAttribute("aria-label", "Delete row");
+    remove.title = "Delete row";
+    remove.innerHTML =
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
     remove.addEventListener("click", function () {
       var bodyRows = document.querySelectorAll("#itemsBody tr");
       if (bodyRows.length <= 1) {
@@ -661,8 +673,6 @@
       tr.remove();
       onEditorChange();
     });
-    wrap.appendChild(dup);
-    wrap.appendChild(saveCat);
     wrap.appendChild(remove);
     actions.appendChild(wrap);
     tr.appendChild(actions);
@@ -672,23 +682,6 @@
     return tr;
   }
 
-  async function saveLineToCatalogue(tr) {
-    try {
-      await Items.saveCatalogueItem({
-        name: tr.querySelector(".item-name").value.trim(),
-        unit: Items.readUnitFromRow(tr),
-        defaultRateMinor: Money.toPaise(tr.querySelector(".item-rate").value),
-        defaultTaxRate: Items.readGstFromRow(tr),
-        hsnSac: tr.querySelector(".item-hsn").value.trim()
-      });
-    } catch (error) {
-      setStatus(error.message || "Could not save to catalogue.", "error");
-      return;
-    }
-    state.catalogue = await Items.listCatalogue();
-    setStatus("Catalogue item saved.", "ok");
-  }
-
   function onEditorChange() {
     if (DocumentEditor.isGenerated(state.document)) {
       return;
@@ -696,6 +689,7 @@
     state.dirty = true;
     clearValidationFields();
     syncCustomerSectionUi(false);
+    ensureTrailingEmptyRow();
     refreshPreview();
   }
 
@@ -997,19 +991,23 @@
       if (DocumentEditor.isGenerated(state.document)) {
         return;
       }
-      syncFormToDocument();
-      state.document.items.push(Items.createLine({ displayEmpty: true }));
-      renderItemsTable(state.document.items);
-      syncFormToDocument();
       var itemRows = document.querySelectorAll("#itemsBody tr");
       var lastRow = itemRows[itemRows.length - 1];
+      if (lastRow && !isRowComplete(lastRow)) {
+        setStatus("Complete name, unit, qty, and rate on this row first.", "info");
+        return;
+      }
+      appendEmptyItemRow();
+      ensureTrailingEmptyRow();
+      refreshPreview();
+      itemRows = document.querySelectorAll("#itemsBody tr");
+      lastRow = itemRows[itemRows.length - 1];
       if (lastRow) {
         var nameField = lastRow.querySelector(".item-name");
         if (nameField) {
           nameField.focus();
         }
       }
-      refreshPreview();
     });
 
     $("btnPickCatalogue").addEventListener("click", async function () {
@@ -1030,9 +1028,15 @@
         return;
       }
       syncFormToDocument();
-      state.document.items.push(Items.fromCatalogue(state.catalogue[index]));
+      var rowsBefore = document.querySelectorAll("#itemsBody tr");
+      var lastBefore = rowsBefore[rowsBefore.length - 1];
+      if (lastBefore && !isRowComplete(lastBefore)) {
+        state.document.items[state.document.items.length - 1] = Items.fromCatalogue(state.catalogue[index]);
+      } else {
+        state.document.items.push(Items.fromCatalogue(state.catalogue[index]));
+      }
       renderItemsTable(state.document.items);
-      syncFormToDocument();
+      ensureTrailingEmptyRow();
       refreshPreview();
     });
 

@@ -628,8 +628,7 @@ textarea:focus-visible {
 }
 
 table.items .text-limit-counter {
-  font-size: 0.68rem;
-  line-height: 1.2;
+  display: none;
 }
 
 
@@ -776,12 +775,10 @@ table.items .item-unit-cell .item-unit {
   width: auto;
 }
 
-table.items .item-unit-other--hidden,
 table.items .item-gst-other--hidden {
   display: none;
 }
 
-table.items .item-unit-other:not(.item-unit-other--hidden),
 table.items .item-gst-other:not(.item-gst-other--hidden) {
   flex: 1 1 auto;
   min-width: 0;
@@ -836,10 +833,31 @@ table.items td.item-amount {
   white-space: nowrap;
 }
 
+table.items td.item-row-actions {
+  width: 2.5rem;
+  padding-left: 4px;
+  padding-right: 4px;
+  text-align: center;
+  vertical-align: middle;
+}
+
 .row-actions {
   display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.row-actions .row-action-delete {
+  padding: 4px;
+  line-height: 0;
+  border-color: transparent;
+  background: transparent;
+  color: var(--danger);
+}
+
+.row-actions .row-action-delete:hover {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: transparent;
 }
 
 .totals-box {

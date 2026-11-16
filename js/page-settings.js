@@ -245,7 +245,7 @@
       if (!name) {
         return;
       }
-      var maxName = Validation.LIMITS.businessName;
+      var maxName = Validation.LIMITS.lineItemName;
       if (name.length > maxName) {
         setStatus("Item name must be at most " + maxName + " characters.", "error");
         return;
