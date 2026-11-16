@@ -1,0 +1,44 @@
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #121820;
+  --surface: #1a2332;
+  --text: #e8eef4;
+  --muted: #9aacbf;
+  --line: #2f3d4f;
+  --primary: #4a8ab5;
+  --primary-dark: #b8d4eb;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --header-bg: rgba(26, 35, 50, 0.92);
+  --input-bg: #141c28;
+  --elevated: #222d3d;
+  --elevated-2: #1e2836;
+  --elevated-3: #263244;
+  --elevated-4: #1f2a3a;
+  --elevated-5: #232f42;
+  --elevated-6: #1c2635;
+  --body-gradient-top: #0f141c;
+  --body-gradient-bottom: #151c27;
+  --body-gradient-radial: rgba(74, 138, 181, 0.15);
+  --nav-link-active-bg: rgba(74, 138, 181, 0.18);
+  --nav-link-active-border: rgba(74, 138, 181, 0.35);
+  --glass-bg: rgba(26, 35, 50, 0.94);
+  --save-bar-bg: rgba(26, 35, 50, 0.96);
+  --warning-bg: #3d2814;
+  --warning-border: #b45309;
+  --warning-text: #fdba74;
+  --backdrop: rgba(0, 0, 0, 0.62);
+  --preview-paper-bg: #ffffff;
+}
+
+/* Invoice preview stays a white document in dark app chrome */
+[data-theme="dark"] .preview-paper {
+  --text: #1f2933;
+  border-color: #cbd5e1;
+}
+
+[data-theme="dark"] table.items input,
+[data-theme="dark"] table.items select {
+  background: var(--input-bg);
+  color: var(--text);
+}

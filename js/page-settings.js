@@ -168,7 +168,47 @@
     setStatus("Logo saved.", "ok");
   }
 
+  function bindSectionNav() {
+    document.querySelectorAll('.settings-nav a[href^="#settings-"]').forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        var href = link.getAttribute("href");
+        if (!href || href.charAt(0) !== "#") {
+          return;
+        }
+        var section = document.getElementById(href.slice(1));
+        if (!section || section.tagName !== "DETAILS") {
+          return;
+        }
+        event.preventDefault();
+        section.open = true;
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  }
+
+  function bindAccordionTools() {
+    var sections = document.querySelectorAll("details.settings-section");
+    var expandBtn = document.getElementById("btnExpandAllSections");
+    var collapseBtn = document.getElementById("btnCollapseAllSections");
+    if (expandBtn) {
+      expandBtn.addEventListener("click", function () {
+        sections.forEach(function (el) {
+          el.open = true;
+        });
+      });
+    }
+    if (collapseBtn) {
+      collapseBtn.addEventListener("click", function () {
+        sections.forEach(function (el) {
+          el.open = false;
+        });
+      });
+    }
+  }
+
   function bindEvents() {
+    bindSectionNav();
+    bindAccordionTools();
     $("btnSaveSettings").addEventListener("click", async function () {
       try {
         readSettingsForm();
@@ -215,6 +255,9 @@
   async function init() {
     try {
       bindEvents();
+      if (window.Theme) {
+        window.Theme.bindSelect("themeMode");
+      }
       state.settings = await Settings.load();
       await loadLogo(state.settings);
       fillSettingsForm();

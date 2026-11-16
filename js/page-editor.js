@@ -7,6 +7,10 @@
 
   var OPEN_DOC_KEY = "billing.openDocId";
   var DRAFT_DOC_KEY = "billing.draftDocument";
+  var PREVIEW_PREF_KEY = "billing.editor.previewOpen";
+
+  var previewUserPreference = null;
+  var resizeTimer = null;
 
   var state = {
     settings: null,
@@ -55,6 +59,95 @@
     }
     state.logoUrl = URL.createObjectURL(asset.blob);
     state.logoDataUrl = await blobToDataUrl(asset.blob);
+  }
+
+  function isWideViewport() {
+    return window.matchMedia("(min-width: 1101px)").matches;
+  }
+
+  function readStoredPreviewPreference() {
+    try {
+      var raw = localStorage.getItem(PREVIEW_PREF_KEY);
+      if (raw === "1") {
+        return true;
+      }
+      if (raw === "0") {
+        return false;
+      }
+    } catch (error) {
+      /* ignore */
+    }
+    return null;
+  }
+
+  function defaultPreviewOpen() {
+    return isWideViewport();
+  }
+
+  function resolvePreviewOpen() {
+    if (previewUserPreference !== null) {
+      return previewUserPreference;
+    }
+    return defaultPreviewOpen();
+  }
+
+  function applyPreviewVisibility(open) {
+    var layout = $("editorLayout");
+    var toggle = $("btnPreviewToggle");
+    var closeBtn = $("btnPreviewClose");
+    if (!layout || !toggle) {
+      return;
+    }
+    layout.classList.toggle("preview-open", open);
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    toggle.textContent = open ? "Hide preview" : "Show invoice preview";
+    if (closeBtn) {
+      closeBtn.hidden = !open;
+    }
+  }
+
+  function setPreviewOpen(open, persist) {
+    applyPreviewVisibility(open);
+    if (persist) {
+      previewUserPreference = open;
+      try {
+        localStorage.setItem(PREVIEW_PREF_KEY, open ? "1" : "0");
+      } catch (error) {
+        /* ignore */
+      }
+    }
+  }
+
+  function initPreviewPanel() {
+    previewUserPreference = readStoredPreviewPreference();
+    applyPreviewVisibility(resolvePreviewOpen());
+
+    var toggle = $("btnPreviewToggle");
+    var closeBtn = $("btnPreviewClose");
+
+    if (toggle) {
+      toggle.addEventListener("click", function () {
+        var layout = $("editorLayout");
+        var open = layout && !layout.classList.contains("preview-open");
+        setPreviewOpen(open, true);
+      });
+    }
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        setPreviewOpen(false, true);
+      });
+    }
+
+    window.addEventListener("resize", function () {
+      if (resizeTimer) {
+        clearTimeout(resizeTimer);
+      }
+      resizeTimer = setTimeout(function () {
+        if (previewUserPreference === null) {
+          applyPreviewVisibility(defaultPreviewOpen());
+        }
+      }, 150);
+    });
   }
 
   function fillDocumentTypes() {
@@ -498,6 +591,7 @@
     try {
       fillDocumentTypes();
       bindEvents();
+      initPreviewPanel();
       state.settings = await Settings.load();
       await loadLogo(state.settings);
       state.catalogue = await Items.listCatalogue();

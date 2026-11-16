@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>History · Billing Generator</title>
+  <script>
+  (function(){try{var m=localStorage.getItem("billing.theme")||"system";var d=m==="dark"||(m==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light");document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();
+  </script>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/themes.css">
   <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/print.css">
 </head>
@@ -35,7 +39,6 @@
     </nav>
   </aside>
 
-  <div id="status" class="status-bar no-print" role="status" aria-live="polite"></div>
 
   <main class="page" aria-label="Invoice history">
     <div class="card" style="max-width:960px;margin:0 auto;">
@@ -72,6 +75,7 @@
   <script defer src="js/customers.js"></script>
   <script defer src="js/preview.js"></script>
   <script defer src="js/document-editor.js"></script>
+  <script defer src="js/theme.js"></script>
   <script defer src="js/ui-common.js"></script>
   <script defer src="js/page-history.js"></script>
 </body>

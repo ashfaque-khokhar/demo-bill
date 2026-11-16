@@ -4,7 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Settings · Billing Generator</title>
+  <script>
+  (function(){try{var m=localStorage.getItem("billing.theme")||"system";var d=m==="dark"||(m==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light");document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();
+  </script>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/themes.css">
   <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/print.css">
 </head>
@@ -35,137 +39,258 @@
     </nav>
   </aside>
 
-  <div id="status" class="status-bar no-print" role="status" aria-live="polite"></div>
+  <main class="page settings-page" aria-label="Business settings">
+    <header class="settings-page__intro">
+      <h2>Settings</h2>
+    </header>
 
-  <main class="page" aria-label="Business settings">
-    <div class="card" style="max-width:920px;margin:0 auto;">
-      <h2>Business settings</h2>
-      <p class="hint">Saved locally in this browser. Changing settings does not alter previously saved documents.</p>
-      <div class="grid-2">
-        <div class="field">
-          <label for="businessName">Business name *</label>
-          <input id="businessName" type="text">
-        </div>
-        <div class="field">
-          <label for="businessMobile">Mobile *</label>
-          <input id="businessMobile" type="tel">
-        </div>
-        <div class="field full">
-          <label for="businessAddress">Address *</label>
-          <textarea id="businessAddress" rows="2"></textarea>
-        </div>
-        <div class="field">
-          <label for="businessEmail">Email</label>
-          <input id="businessEmail" type="email">
-        </div>
-        <div class="field">
-          <label for="businessWebsite">Website</label>
-          <input id="businessWebsite" type="text">
-        </div>
-        <div class="field">
-          <label for="businessGstin">GSTIN</label>
-          <input id="businessGstin" type="text">
-        </div>
-        <div class="field">
-          <label for="supplierState">Supplier state</label>
-          <input id="supplierState" type="text" list="stateList">
-        </div>
-        <div class="field">
-          <label for="supplierStateCode">Supplier state code</label>
-          <input id="supplierStateCode" type="text" maxlength="2">
-        </div>
-        <div class="field">
-          <label for="upiId">UPI ID (optional)</label>
-          <input id="upiId" type="text">
-        </div>
-        <div class="field">
-          <label for="bankDetails">Bank details (optional)</label>
-          <input id="bankDetails" type="text">
-        </div>
-        <div class="field full">
-          <label for="disclaimer">Disclaimer / terms</label>
-          <textarea id="disclaimer" rows="3"></textarea>
-        </div>
-      </div>
+    <div class="settings-layout">
+      <nav class="settings-nav settings-nav--side no-print" aria-label="Jump to section">
+        <a href="#settings-appearance">Appearance</a>
+        <a href="#settings-business">Business profile</a>
+        <a href="#settings-contact">Contact &amp; web</a>
+        <a href="#settings-tax">Tax &amp; GST</a>
+        <a href="#settings-payment">Payment &amp; footer</a>
+        <a href="#settings-branding">Logo &amp; branding</a>
+        <a href="#settings-numbering">Invoice numbering</a>
+        <a href="#settings-labels">Table labels</a>
+        <a href="#settings-catalogue">Item catalogue</a>
+      </nav>
 
-      <h3>Logo</h3>
-      <div class="grid-2">
-        <div class="field">
-          <label for="logoFile">Upload logo (PNG/JPEG/WebP, max 2 MB)</label>
-          <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp">
-        </div>
-        <div class="field">
-          <label>Preview</label>
-          <img id="logoPreview" class="logo-preview" alt="Business logo preview" src="assets/logo-placeholder.svg">
-        </div>
-        <div class="field">
-          <label for="logoWidth">Logo width (px)</label>
-          <input id="logoWidth" type="number" min="40" max="300" value="120">
-        </div>
-        <div class="field">
-          <label for="logoHeight">Logo height (px)</label>
-          <input id="logoHeight" type="number" min="20" max="160" value="48">
-        </div>
-        <div class="field">
-          <label for="logoAlignment">Logo alignment</label>
-          <select id="logoAlignment">
-            <option value="left">Left</option>
-            <option value="center">Center</option>
-            <option value="right">Right</option>
-          </select>
-        </div>
-        <div class="field">
-          <button type="button" class="btn secondary" id="btnClearLogo">Clear logo</button>
-        </div>
-      </div>
+      <div class="settings-sections">
+        <details class="settings-section card" id="settings-appearance" open>
+          <summary class="settings-section__summary">
+            <span class="settings-section__title" id="settings-appearance-title">Appearance</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-section__body">
+            <div class="field">
+              <label for="themeMode">Theme</label>
+              <select id="themeMode">
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </div>
+          </div>
+        </details>
 
-      <h3>Numbering</h3>
-      <div class="grid-2">
-        <div class="field">
-          <label for="numberPattern">Pattern</label>
-          <input id="numberPattern" type="text" value="{PREFIX}/{YYYY}/{SEQ}">
-        </div>
-        <div class="field">
-          <label for="sequencePadding">Sequence padding</label>
-          <input id="sequencePadding" type="number" min="1" max="8" value="4">
-        </div>
-        <div class="field">
-          <label for="sequenceStart">Sequence start</label>
-          <input id="sequenceStart" type="number" min="1" value="1">
-        </div>
-        <div class="field">
-          <label for="resetRule">Reset rule</label>
-          <select id="resetRule">
-            <option value="never">Never</option>
-            <option value="yearly">Yearly</option>
-            <option value="manual">Manual</option>
-          </select>
-        </div>
-      </div>
-      <p class="hint">Tokens: {PREFIX} {YYYY} {YY} {MM} {SEQ}. Separate sequence per document type.</p>
+        <details class="settings-section card" id="settings-business">
+          <summary class="settings-section__summary">
+            <span class="settings-section__title" id="settings-business-title">Business profile</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-section__body">
+          <div class="grid-2">
+            <div class="field">
+              <label for="businessName">Business name *</label>
+              <input id="businessName" type="text" autocomplete="organization">
+            </div>
+            <div class="field">
+              <label for="businessMobile">Mobile *</label>
+              <input id="businessMobile" type="tel" autocomplete="tel">
+            </div>
+            <div class="field full">
+              <label for="businessAddress">Address *</label>
+              <textarea id="businessAddress" rows="2" autocomplete="street-address"></textarea>
+            </div>
+          </div>
+          </div>
+        </details>
 
-      <h3>Table headings</h3>
-      <div class="grid-2">
-        <div class="field"><label for="hItem">Item</label><input id="hItem" type="text"></div>
-        <div class="field"><label for="hQty">Quantity</label><input id="hQty" type="text"></div>
-        <div class="field"><label for="hUnit">Unit</label><input id="hUnit" type="text"></div>
-        <div class="field"><label for="hRate">Rate</label><input id="hRate" type="text"></div>
-        <div class="field"><label for="hDiscount">Discount</label><input id="hDiscount" type="text"></div>
-        <div class="field"><label for="hTax">Tax</label><input id="hTax" type="text"></div>
-        <div class="field"><label for="hAmount">Amount</label><input id="hAmount" type="text"></div>
-        <div class="field"><label for="hSubtotal">Subtotal</label><input id="hSubtotal" type="text"></div>
-        <div class="field"><label for="hGrand">Grand total</label><input id="hGrand" type="text"></div>
-      </div>
+        <details class="settings-section card" id="settings-contact">
+          <summary class="settings-section__summary">
+            <span class="settings-section__title" id="settings-contact-title">Contact &amp; web</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-section__body">
+          <div class="grid-2">
+            <div class="field">
+              <label for="businessEmail">Email</label>
+              <input id="businessEmail" type="email" autocomplete="email">
+            </div>
+            <div class="field">
+              <label for="businessWebsite">Website</label>
+              <input id="businessWebsite" type="text" autocomplete="url">
+            </div>
+          </div>
+          </div>
+        </details>
 
-      <h3>Item catalogue</h3>
-      <div class="toolbar">
-        <button type="button" class="btn secondary" id="btnAddCatalogue">Add catalogue item</button>
-      </div>
-      <div id="catalogueList" class="history-list"></div>
+        <details class="settings-section card" id="settings-tax">
+          <summary class="settings-section__summary">
+            <span class="settings-section__title" id="settings-tax-title">Tax &amp; GST</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-section__body">
+          <div class="grid-2">
+            <div class="field">
+              <label for="businessGstin">GSTIN</label>
+              <input id="businessGstin" type="text">
+            </div>
+            <div class="field">
+              <label for="supplierState">Supplier state</label>
+              <input id="supplierState" type="text" list="stateList">
+            </div>
+            <div class="field">
+              <label for="supplierStateCode">Supplier state code</label>
+              <input id="supplierStateCode" type="text" maxlength="2">
+            </div>
+          </div>
+          </div>
+        </details>
 
-      <div class="toolbar" style="margin-top:16px;">
-        <button type="button" class="btn" id="btnSaveSettings">Save settings</button>
+        <details class="settings-section card" id="settings-payment">
+          <summary class="settings-section__summary">
+            <span class="settings-section__title" id="settings-payment-title">Payment &amp; footer</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-section__body">
+          <div class="grid-2">
+            <div class="field">
+              <label for="upiId">UPI ID (optional)</label>
+              <input id="upiId" type="text">
+            </div>
+            <div class="field">
+              <label for="bankDetails">Bank details (optional)</label>
+              <input id="bankDetails" type="text">
+            </div>
+            <div class="field full">
+              <label for="disclaimer">Disclaimer / terms</label>
+              <textarea id="disclaimer" rows="3"></textarea>
+            </div>
+          </div>
+          </div>
+        </details>
+
+        <details class="settings-section card" id="settings-branding">
+          <summary class="settings-section__summary">
+            <span class="settings-section__title" id="settings-branding-title">Logo &amp; branding</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-section__body">
+          <div class="grid-2">
+            <div class="field">
+              <label for="logoFile">Upload logo (PNG/JPEG/WebP, max 2 MB)</label>
+              <input id="logoFile" type="file" accept="image/png,image/jpeg,image/webp">
+            </div>
+            <div class="field">
+              <label>Preview</label>
+              <div class="logo-preview-wrap">
+                <img id="logoPreview" class="logo-preview" alt="Business logo preview" src="assets/logo-placeholder.svg">
+              </div>
+            </div>
+            <div class="field">
+              <label for="logoWidth">Logo width (px)</label>
+              <input id="logoWidth" type="number" min="40" max="300" value="120">
+            </div>
+            <div class="field">
+              <label for="logoHeight">Logo height (px)</label>
+              <input id="logoHeight" type="number" min="20" max="160" value="48">
+            </div>
+            <div class="field">
+              <label for="logoAlignment">Logo alignment</label>
+              <select id="logoAlignment">
+                <option value="left">Left</option>
+                <option value="center">Center</option>
+                <option value="right">Right</option>
+              </select>
+            </div>
+            <div class="field field--actions">
+              <span class="field-label-spacer" aria-hidden="true"></span>
+              <button type="button" class="btn secondary" id="btnClearLogo">Clear logo</button>
+            </div>
+          </div>
+          </div>
+        </details>
+
+        <details class="settings-section card" id="settings-numbering">
+          <summary class="settings-section__summary">
+            <span class="settings-section__title" id="settings-numbering-title">Invoice numbering</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-section__body">
+          <div class="grid-2">
+            <div class="field">
+              <label for="numberPattern">Pattern</label>
+              <input id="numberPattern" type="text" value="{PREFIX}/{YYYY}/{SEQ}">
+            </div>
+            <div class="field">
+              <label for="sequencePadding">Sequence padding</label>
+              <input id="sequencePadding" type="number" min="1" max="8" value="4">
+            </div>
+            <div class="field">
+              <label for="sequenceStart">Sequence start</label>
+              <input id="sequenceStart" type="number" min="1" value="1">
+            </div>
+            <div class="field">
+              <label for="resetRule">Reset rule</label>
+              <select id="resetRule">
+                <option value="never">Never</option>
+                <option value="yearly">Yearly</option>
+                <option value="manual">Manual</option>
+              </select>
+            </div>
+          </div>
+          </div>
+        </details>
+
+        <details class="settings-section card" id="settings-labels">
+          <summary class="settings-section__summary">
+            <span class="settings-section__title" id="settings-labels-title">Table column labels</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-section__body">
+          <div class="grid-headings">
+            <div class="field"><label for="hItem">Item</label><input id="hItem" type="text"></div>
+            <div class="field"><label for="hQty">Quantity</label><input id="hQty" type="text"></div>
+            <div class="field"><label for="hUnit">Unit</label><input id="hUnit" type="text"></div>
+            <div class="field"><label for="hRate">Rate</label><input id="hRate" type="text"></div>
+            <div class="field"><label for="hDiscount">Discount</label><input id="hDiscount" type="text"></div>
+            <div class="field"><label for="hTax">Tax</label><input id="hTax" type="text"></div>
+            <div class="field"><label for="hAmount">Amount</label><input id="hAmount" type="text"></div>
+            <div class="field"><label for="hSubtotal">Subtotal</label><input id="hSubtotal" type="text"></div>
+            <div class="field"><label for="hGrand">Grand total</label><input id="hGrand" type="text"></div>
+          </div>
+          </div>
+        </details>
+
+        <details class="settings-section card" id="settings-catalogue">
+          <summary class="settings-section__summary">
+            <span class="settings-section__title" id="settings-catalogue-title">Item catalogue</span>
+            <span class="settings-section__chevron" aria-hidden="true"></span>
+          </summary>
+          <div class="settings-section__body">
+          <div class="toolbar">
+            <button type="button" class="btn secondary" id="btnAddCatalogue">Add catalogue item</button>
+          </div>
+          <div id="catalogueList" class="history-list"></div>
+          </div>
+        </details>
       </div>
+    </div>
+
+    <footer class="settings-disclaimers card no-print" aria-label="Settings notes">
+      <p class="hint settings-disclaimers__lead">Saved locally in this browser. Changing settings does not alter previously saved documents. Tap a section to expand or collapse.</p>
+      <div class="settings-accordion-tools toolbar">
+        <button type="button" class="btn secondary" id="btnExpandAllSections">Expand all</button>
+        <button type="button" class="btn secondary" id="btnCollapseAllSections">Collapse all</button>
+      </div>
+      <ul class="settings-disclaimers__list">
+        <li><strong>Appearance</strong> — App colors only; invoice preview stays white for print and export. Theme applies immediately; no need to save settings.</li>
+        <li><strong>Business profile</strong> — Shown as your name and address on new invoices.</li>
+        <li><strong>Contact &amp; web</strong> — Optional details for customers to reach you.</li>
+        <li><strong>Tax &amp; GST</strong> — Used for GST invoices and place-of-supply rules.</li>
+        <li><strong>Payment &amp; footer</strong> — Payment lines and terms printed at the bottom of invoices.</li>
+        <li><strong>Logo &amp; branding</strong> — Appears in the invoice header when uploaded.</li>
+        <li><strong>Invoice numbering</strong> — How new invoice numbers are generated. Tokens: <code>{PREFIX}</code> <code>{YYYY}</code> <code>{YY}</code> <code>{MM}</code> <code>{SEQ}</code>. Separate sequence per document type.</li>
+        <li><strong>Table column labels</strong> — Custom wording for line items and totals on the invoice.</li>
+        <li><strong>Item catalogue</strong> — Quick-pick items when adding rows in the editor.</li>
+      </ul>
+    </footer>
+
+    <div class="settings-save-bar no-print">
+      <button type="button" class="btn" id="btnSaveSettings">Save settings</button>
     </div>
   </main>
 
@@ -202,6 +327,7 @@
   <script defer src="js/storage-repository.js"></script>
   <script defer src="js/settings.js"></script>
   <script defer src="js/items.js"></script>
+  <script defer src="js/theme.js"></script>
   <script defer src="js/ui-common.js"></script>
   <script defer src="js/page-settings.js"></script>
 </body>
