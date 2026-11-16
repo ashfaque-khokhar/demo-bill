@@ -769,25 +769,22 @@ table.items .item-gst-cell {
   min-width: 5.5rem;
 }
 
-table.items .item-unit-cell .item-unit {
+table.items .item-unit-cell .item-unit,
+table.items .item-gst-cell .item-gst {
   flex: 0 0 auto;
-  min-width: 3.25rem;
+  min-width: 4.5rem;
   width: auto;
 }
 
+table.items .item-unit-other--hidden,
 table.items .item-gst-other--hidden {
   display: none;
 }
 
+table.items .item-unit-other:not(.item-unit-other--hidden),
 table.items .item-gst-other:not(.item-gst-other--hidden) {
   flex: 1 1 auto;
   min-width: 0;
-  width: auto;
-}
-
-table.items .item-gst-cell .item-gst {
-  flex: 0 0 auto;
-  min-width: 3.25rem;
   width: auto;
 }
 

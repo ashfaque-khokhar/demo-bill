@@ -55,6 +55,9 @@
 
     for (var i = 0; i < items.length; i += 1) {
       var src = items[i] || {};
+      if (global.Validation && Validation.isMeaningfulLine && !Validation.isMeaningfulLine(src)) {
+        continue;
+      }
       var gross = lineGrossMinor(src);
       var lineDisc = applyDiscount(gross, src.discountType, src.discountValue);
       var afterLineDisc = Math.max(0, gross - lineDisc);
@@ -66,7 +69,7 @@
         catalogueItemId: src.catalogueItemId || null,
         name: String(src.name || ""),
         quantity: safeNumber(src.quantity, 0),
-        unit: String(src.unit || "Piece"),
+        unit: String(src.unit || ""),
         rateMinor: Money.roundPaise(src.rateMinor),
         discountType: src.discountType || "none",
         discountValue: safeNumber(src.discountValue, 0),

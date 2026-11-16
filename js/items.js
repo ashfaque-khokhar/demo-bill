@@ -104,13 +104,17 @@
   function readUnitFromRow(tr) {
     var sel = tr && tr.querySelector(".item-unit");
     if (!sel) {
-      return "Piece";
+      return "";
     }
     var v = sel.value;
     if (!v) {
       return "";
     }
-    return String(v).trim() || "Piece";
+    if (v === UNIT_SELECT_OTHER) {
+      var other = tr.querySelector(".item-unit-other");
+      return String(other && other.value ? other.value : "").trim();
+    }
+    return String(v).trim();
   }
 
   function unitPickerPromptLines() {

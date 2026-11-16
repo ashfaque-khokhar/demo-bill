@@ -256,7 +256,9 @@
     var rate = Number(line && line.rateMinor) || 0;
     var qty = Number(line && line.quantity);
     var discType = (line && line.discountType) || "none";
-    if (name || unit || rate > 0 || (isFinite(qty) && qty > 0)) {
+    var hsn = trim(line && line.hsnSac);
+    var gst = Number(line && line.gstRate);
+    if (name || unit || hsn || rate > 0 || (isFinite(gst) && gst > 0) || (isFinite(qty) && qty > 0)) {
       return true;
     }
     return discType !== "none";
@@ -507,6 +509,7 @@
     optionalWebsite: optionalWebsite,
     validateBusinessSettings: validateBusinessSettings,
     validateCustomer: validateCustomer,
+    isMeaningfulLine: isMeaningfulLine,
     validateLineItems: validateLineItems,
     validateDocument: validateDocument,
     validateCatalogueItem: validateCatalogueItem,
