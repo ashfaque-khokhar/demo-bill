@@ -203,6 +203,38 @@
     return doc;
   }
 
+  function formatCustomerPreview(name, mobile, address) {
+    var parts = [name, mobile, address]
+      .map(function (s) { return (s || "").trim(); })
+      .filter(Boolean);
+    return parts.length ? parts.join(" · ") : "";
+  }
+
+  function syncCustomerSectionUi(setOpenFromDoc) {
+    var section = $("docCustomerSection");
+    var preview = $("customerPreview");
+    if (!section || !preview) {
+      return;
+    }
+
+    var name = $("customerName").value.trim();
+    var mobile = $("customerMobile").value.trim();
+    var address = $("customerAddress").value.trim();
+    var allEmpty = !name && !mobile && !address;
+
+    if (setOpenFromDoc) {
+      section.open = !name;
+    }
+
+    if (section.open) {
+      preview.hidden = true;
+      return;
+    }
+
+    preview.textContent = allEmpty ? "Tap to add customer" : formatCustomerPreview(name, mobile, address);
+    preview.hidden = false;
+  }
+
   function syncDocumentCardUi() {
     var typeId = $("documentType").value;
     var typeMeta = DocumentTypes.getById(typeId);
@@ -243,6 +275,7 @@
     $("notes").value = doc.notes || "";
     renderItemsTable(doc.items || []);
     syncDocumentCardUi();
+    syncCustomerSectionUi(true);
     refreshPreview();
   }
 
@@ -404,6 +437,7 @@
 
   function onEditorChange() {
     state.dirty = true;
+    syncCustomerSectionUi(false);
     refreshPreview();
   }
 
@@ -552,6 +586,13 @@
   }
 
   function bindEvents() {
+    var customerSection = $("docCustomerSection");
+    if (customerSection) {
+      customerSection.addEventListener("toggle", function () {
+        syncCustomerSectionUi(false);
+      });
+    }
+
     [
       "documentType", "customerName", "customerMobile",
       "customerAddress", "customerEmail", "customerGstin", "customerState",

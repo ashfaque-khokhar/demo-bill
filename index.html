@@ -50,24 +50,25 @@
           </div>
 
           <div class="editor-sections">
-            <details class="settings-section" open>
-              <summary class="settings-section__summary">
+            <details class="settings-section" id="docCustomerSection">
+              <summary class="settings-section__summary document-card__customer-summary">
                 <span class="settings-section__title">Customer</span>
+                <span class="document-card__customer-preview" id="customerPreview" hidden></span>
                 <span class="settings-section__chevron" aria-hidden="true"></span>
               </summary>
-              <div class="settings-section__body">
-                <div class="grid-2">
-                  <div class="field">
+              <div class="settings-section__body document-card__customer-body">
+                <div class="document-card__customer-fields">
+                  <div class="field field--compact">
                     <label for="customerName">Name *</label>
                     <input id="customerName" type="text" autocomplete="name">
                   </div>
-                  <div class="field">
+                  <div class="field field--compact">
                     <label for="customerMobile">Mobile</label>
                     <input id="customerMobile" type="tel" autocomplete="tel">
                   </div>
-                  <div class="field full">
+                  <div class="field field--compact full">
                     <label for="customerAddress">Address</label>
-                    <textarea id="customerAddress" rows="2"></textarea>
+                    <textarea id="customerAddress" rows="1" autocomplete="street-address"></textarea>
                   </div>
                 </div>
               </div>

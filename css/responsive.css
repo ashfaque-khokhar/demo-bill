@@ -36,6 +36,10 @@
     grid-template-columns: 1fr;
   }
 
+  .document-card__customer-fields {
+    grid-template-columns: 1fr;
+  }
+
   .document-card__header {
     flex-wrap: wrap;
   }

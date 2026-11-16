@@ -378,6 +378,68 @@ textarea:focus-visible {
   display: none;
 }
 
+.document-card__customer-summary {
+  min-height: 44px;
+  padding: 10px 14px;
+}
+
+.document-card__customer-summary .settings-section__title {
+  flex: 0 0 auto;
+}
+
+.document-card__customer-preview {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#docCustomerSection:not([open]) #customerPreview:not([hidden]) {
+  display: block;
+}
+
+#docCustomerSection[open] #customerPreview {
+  display: none !important;
+}
+
+.document-card__customer-body {
+  padding: 10px 14px 12px;
+}
+
+.document-card__customer-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.document-card__customer-fields .field.full {
+  grid-column: 1 / -1;
+}
+
+.document-card__customer-fields .field--compact {
+  gap: 4px;
+  margin-bottom: 0;
+}
+
+.document-card__customer-fields .field--compact label {
+  font-size: 0.78rem;
+}
+
+.document-card__customer-fields .field--compact input,
+.document-card__customer-fields .field--compact textarea {
+  padding: 7px 9px;
+  font-size: 0.9rem;
+}
+
+.document-card__customer-fields .field--compact textarea {
+  resize: vertical;
+  min-height: 2.25rem;
+}
+
 .grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
