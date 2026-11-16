@@ -70,16 +70,47 @@
     }
   }
 
+  var onboardFieldMap = {
+    businessName: "onboardBusinessName",
+    businessMobile: "onboardBusinessMobile",
+    businessAddress: "onboardBusinessAddress",
+    businessEmail: "onboardBusinessEmail",
+    businessWebsite: "onboardBusinessWebsite",
+    businessGstin: "onboardBusinessGstin",
+    supplierStateCode: "onboardSupplierStateCode"
+  };
+
   function validateCurrentStep() {
-    if (stepIndex !== 0) {
+    applyStepFieldsToSettings();
+    if (stepIndex === 0) {
+      var businessCheck = Validation.validateBusinessSettings(settingsRef, onboardFieldMap);
+      if (!businessCheck.ok) {
+        setStatus(businessCheck.message, "error");
+        if (global.AppUI && businessCheck.fields) {
+          global.AppUI.showValidationFields(businessCheck.fields);
+        }
+        return false;
+      }
       return true;
     }
-    var name = $("onboardBusinessName").value.trim();
-    var mobile = $("onboardBusinessMobile").value.trim();
-    var address = $("onboardBusinessAddress").value.trim();
-    if (!name || !mobile || !address) {
-      setStatus("Business name, mobile, and address are required to save this step.", "error");
-      return false;
+    if (stepIndex === 1) {
+      var optionalChecks = [
+        Validation.optionalEmail(settingsRef.email, "onboardBusinessEmail"),
+        Validation.optionalWebsite(settingsRef.website, "onboardBusinessWebsite"),
+        Validation.optionalGstin(settingsRef.gstin, "onboardBusinessGstin"),
+        Validation.optionalStateCode(settingsRef.supplierStateCode, "onboardSupplierStateCode")
+      ].filter(Boolean);
+      if (!optionalChecks.length) {
+        return true;
+      }
+      var merged = Validation.mergeResults(optionalChecks);
+      if (!merged.ok) {
+        setStatus(merged.message, "error");
+        if (global.AppUI && merged.fields) {
+          global.AppUI.showValidationFields(merged.fields);
+        }
+        return false;
+      }
     }
     return true;
   }

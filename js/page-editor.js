@@ -4,6 +4,8 @@
   var $ = AppUI.$;
   var setStatus = AppUI.setStatus;
   var confirmModal = AppUI.confirmModal;
+  var showValidationFields = AppUI.showValidationFields;
+  var clearValidationFields = AppUI.clearValidationFields;
 
   var OPEN_DOC_KEY = "billing.openDocId";
   var DRAFT_DOC_KEY = "billing.draftDocument";
@@ -167,29 +169,25 @@
     });
   }
 
-  function isUnsavedDraft(doc) {
-    return !!doc && (!doc.id || doc.isNew === true);
+  function isEditableDraft(doc) {
+    return !!doc && !DocumentEditor.isGenerated(doc);
   }
 
-  function applyDraftDateAndNumber() {
-    if (!state.document || !state.settings || !isUnsavedDraft(state.document)) {
+  function applyDraftInvoiceDate(doc) {
+    if (!doc || !isEditableDraft(doc)) {
       return;
     }
-    var doc = state.document;
     doc.invoiceDate = DocumentEditor.todayIso();
-    var peek = Numbering.peekNumber(state.settings, doc.documentType, doc.invoiceDate);
-    doc.documentNumber = peek.documentNumber;
-    doc.numberingSnapshot = {
-      pattern: state.settings.numbering.pattern,
-      sequenceValue: peek.sequenceValue
-    };
   }
 
   function syncFormToDocument() {
     var doc = state.document;
+    if (DocumentEditor.isGenerated(doc)) {
+      return doc;
+    }
     doc.documentType = $("documentType").value;
-    if (isUnsavedDraft(doc)) {
-      applyDraftDateAndNumber();
+    if (isEditableDraft(doc) && (!doc.id || doc.isNew)) {
+      applyDraftInvoiceDate(doc);
     }
     doc.paperSize = paperSize();
     doc.customer = Customers.readFromForm(customerIds);
@@ -261,10 +259,75 @@
     }
   }
 
+  function setFormControlsDisabled(disabled) {
+    var editorForm = $("editorForm");
+    if (editorForm) {
+      editorForm.classList.toggle("editor-form--readonly", disabled);
+    }
+
+    [
+      "documentType", "customerName", "customerMobile",
+      "customerAddress", "customerEmail", "customerGstin", "customerState",
+      "customerStateCode", "gstEnabled", "supplyType", "invoiceDiscountType",
+      "invoiceDiscountValue", "notes"
+    ].forEach(function (id) {
+      var node = $(id);
+      if (node) {
+        node.disabled = disabled;
+      }
+    });
+
+    var customerSection = $("docCustomerSection");
+    if (customerSection && disabled) {
+      customerSection.open = false;
+    }
+
+    document.querySelectorAll("#itemsBody input, #itemsBody select, #itemsBody textarea").forEach(function (node) {
+      node.disabled = disabled;
+    });
+    document.querySelectorAll("#itemsBody .row-actions button").forEach(function (node) {
+      node.hidden = disabled;
+    });
+
+    var btnAdd = $("btnAddItem");
+    var btnPick = $("btnPickCatalogue");
+    var btnSaveDraft = $("btnSaveDraft");
+    var btnGenerate = $("btnGenerate");
+    var notice = $("editorReadonlyNotice");
+    var exportMenu = $("editorExportMenu");
+    if (btnAdd) {
+      btnAdd.hidden = disabled;
+    }
+    if (btnPick) {
+      btnPick.hidden = disabled;
+    }
+    if (btnSaveDraft) {
+      btnSaveDraft.hidden = disabled;
+    }
+    if (btnGenerate) {
+      btnGenerate.hidden = disabled;
+    }
+    if (notice) {
+      notice.hidden = !disabled;
+    }
+    if (exportMenu) {
+      exportMenu.hidden = !disabled;
+      if (!disabled) {
+        exportMenu.open = false;
+      }
+    }
+  }
+
+  function applyEditorMode() {
+    setFormControlsDisabled(DocumentEditor.isGenerated(state.document));
+  }
+
   function syncDocumentToForm() {
     var doc = state.document;
-    if (isUnsavedDraft(doc)) {
-      applyDraftDateAndNumber();
+    doc = DocumentEditor.normalizeDocument(doc);
+    state.document = doc;
+    if (isEditableDraft(doc) && (!doc.id || doc.isNew)) {
+      applyDraftInvoiceDate(doc);
     }
     $("documentType").value = doc.documentType;
     Customers.writeToForm(doc.customer || Customers.emptyCustomer(), customerIds);
@@ -276,7 +339,24 @@
     renderItemsTable(doc.items || []);
     syncDocumentCardUi();
     syncCustomerSectionUi(true);
+    applyEditorMode();
     refreshPreview();
+  }
+
+  function sanitizeLineFromTable(line) {
+    return {
+      id: line.id,
+      catalogueItemId: line.catalogueItemId,
+      name: line.name,
+      description: line.description,
+      quantity: line.quantity,
+      unit: line.unit,
+      rateMinor: line.rateMinor,
+      discountType: line.discountType,
+      discountValue: line.discountValue,
+      hsnSac: line.hsnSac,
+      gstRate: line.gstRate
+    };
   }
 
   function readItemsFromTable() {
@@ -284,19 +364,19 @@
     return rows.map(function (tr) {
       var discountType = tr.querySelector(".item-disc-type").value;
       var discountValue = Number(tr.querySelector(".item-disc-value").value) || 0;
-      return {
+      return sanitizeLineFromTable({
         id: tr.getAttribute("data-id"),
         catalogueItemId: tr.getAttribute("data-catalogue-id") || null,
         name: tr.querySelector(".item-name").value.trim(),
         description: tr.querySelector(".item-desc").value.trim(),
-        quantity: Number(tr.querySelector(".item-qty").value) || 0,
+        quantity: Number(tr.querySelector(".item-qty").value) || 1,
         unit: tr.querySelector(".item-unit").value.trim() || "Piece",
         rateMinor: Money.toPaise(tr.querySelector(".item-rate").value),
         discountType: discountType,
         discountValue: discountValue,
         hsnSac: tr.querySelector(".item-hsn").value.trim(),
         gstRate: Number(tr.querySelector(".item-gst").value) || 0
-      };
+      });
     });
   }
 
@@ -316,21 +396,30 @@
     if (item.catalogueItemId) {
       tr.setAttribute("data-catalogue-id", item.catalogueItemId);
     }
+    var displayEmpty = !!item.displayEmpty;
 
-    function cellInput(className, value, type) {
+    function cellInput(className, value, type, placeholder) {
       var td = document.createElement("td");
       var input = document.createElement(type === "textarea" ? "textarea" : "input");
       if (type !== "textarea") {
         input.type = type || "text";
       }
       input.className = className;
-      input.value = value == null ? "" : value;
+      if (displayEmpty) {
+        input.value = "";
+        if (placeholder != null) {
+          input.placeholder = placeholder;
+        }
+      } else {
+        input.value = value == null ? "" : value;
+      }
       input.addEventListener("input", onEditorChange);
       td.appendChild(input);
       return td;
     }
 
     var nameTd = document.createElement("td");
+    nameTd.className = "item-desc-cell";
     var name = document.createElement("input");
     name.type = "text";
     name.className = "item-name";
@@ -347,9 +436,14 @@
     nameTd.appendChild(desc);
     tr.appendChild(nameTd);
 
-    tr.appendChild(cellInput("item-qty", item.quantity, "number"));
-    tr.appendChild(cellInput("item-unit", item.unit || "Piece", "text"));
-    tr.appendChild(cellInput("item-rate", Money.fromPaise(item.rateMinor || 0).toFixed(2), "number"));
+    tr.appendChild(cellInput("item-qty", item.quantity, "number", "1"));
+    tr.appendChild(cellInput("item-unit", item.unit || "Piece", "text", "Piece"));
+    tr.appendChild(cellInput(
+      "item-rate",
+      Money.fromPaise(item.rateMinor || 0).toFixed(2),
+      "number",
+      "0.00"
+    ));
 
     var discTd = document.createElement("td");
     var discType = document.createElement("select");
@@ -365,13 +459,19 @@
     var discValue = document.createElement("input");
     discValue.type = "number";
     discValue.className = "item-disc-value";
-    discValue.value = item.discountValue || 0;
+    if (displayEmpty) {
+      discValue.value = "";
+      discValue.placeholder = "0";
+    } else {
+      discValue.value = item.discountValue || 0;
+    }
     discValue.addEventListener("input", onEditorChange);
+    discTd.className = "item-disc-cell";
     discTd.appendChild(discType);
     discTd.appendChild(discValue);
     tr.appendChild(discTd);
 
-    tr.appendChild(cellInput("item-gst", item.gstRate || 0, "number"));
+    tr.appendChild(cellInput("item-gst", item.gstRate || 0, "number", "0"));
     tr.appendChild(cellInput("item-hsn", item.hsnSac || "", "text"));
 
     var amountTd = document.createElement("td");
@@ -389,8 +489,10 @@
     dup.addEventListener("click", function () {
       syncFormToDocument();
       var copy = Items.createLine(Object.assign({}, item, { id: Items.createId() }));
+      delete copy.displayEmpty;
       state.document.items.push(copy);
       renderItemsTable(state.document.items);
+      syncFormToDocument();
       refreshPreview();
     });
     var saveCat = document.createElement("button");
@@ -406,6 +508,11 @@
     remove.className = "btn ghost";
     remove.textContent = "Del";
     remove.addEventListener("click", function () {
+      var bodyRows = document.querySelectorAll("#itemsBody tr");
+      if (bodyRows.length <= 1) {
+        setStatus("Keep at least one line item row.", "info");
+        return;
+      }
       tr.remove();
       onEditorChange();
     });
@@ -418,35 +525,40 @@
   }
 
   async function saveLineToCatalogue(tr) {
-    var name = tr.querySelector(".item-name").value.trim();
-    if (!name) {
-      setStatus("Item name is required to save to catalogue.", "error");
+    try {
+      await Items.saveCatalogueItem({
+        name: tr.querySelector(".item-name").value.trim(),
+        description: tr.querySelector(".item-desc").value.trim(),
+        unit: tr.querySelector(".item-unit").value.trim() || "Piece",
+        defaultRateMinor: Money.toPaise(tr.querySelector(".item-rate").value),
+        defaultTaxRate: Number(tr.querySelector(".item-gst").value) || 0,
+        hsnSac: tr.querySelector(".item-hsn").value.trim()
+      });
+    } catch (error) {
+      setStatus(error.message || "Could not save to catalogue.", "error");
       return;
     }
-    await Items.saveCatalogueItem({
-      name: name,
-      description: tr.querySelector(".item-desc").value.trim(),
-      unit: tr.querySelector(".item-unit").value.trim() || "Piece",
-      defaultRateMinor: Money.toPaise(tr.querySelector(".item-rate").value),
-      defaultTaxRate: Number(tr.querySelector(".item-gst").value) || 0,
-      hsnSac: tr.querySelector(".item-hsn").value.trim()
-    });
     state.catalogue = await Items.listCatalogue();
     setStatus("Catalogue item saved.", "ok");
   }
 
   function onEditorChange() {
+    if (DocumentEditor.isGenerated(state.document)) {
+      return;
+    }
     state.dirty = true;
+    clearValidationFields();
     syncCustomerSectionUi(false);
     refreshPreview();
   }
 
   function refreshPreview() {
-    if (state.document && isUnsavedDraft(state.document)) {
+    if (state.document && isEditableDraft(state.document)) {
       state.document.documentType = $("documentType").value;
-      applyDraftDateAndNumber();
     }
-    syncFormToDocument();
+    if (!DocumentEditor.isGenerated(state.document)) {
+      syncFormToDocument();
+    }
     var business = state.document.businessSnapshot || state.settings;
     var calc = Calculations.calculateDocument(state.document, state.settings);
     var rows = document.querySelectorAll("#itemsBody tr");
@@ -490,7 +602,8 @@
     addRow("Grand Total", Money.formatINR(calc.grandTotalMinor), "grand");
 
     $("previewPaper").className = "preview-paper " + String(paperSize()).toLowerCase();
-    Preview.render($("invoicePreview"), state.document, calc, business, state.logoUrl);
+    var displayNumber = DocumentEditor.displayDocumentNumber(state.document, state.settings);
+    Preview.render($("invoicePreview"), state.document, calc, business, state.logoUrl, displayNumber);
     return calc;
   }
 
@@ -501,21 +614,119 @@
     setStatus("New document ready.", "info");
   }
 
-  async function saveCurrent() {
+  var customerFieldIds = [
+    "customerName",
+    "customerMobile",
+    "customerAddress",
+    "customerEmail",
+    "customerGstin",
+    "customerState",
+    "customerStateCode"
+  ];
+
+  function openDetailsForField(fieldId) {
+    var input = $(fieldId);
+    if (!input) {
+      return;
+    }
+    var details = input.closest("details.settings-section");
+    if (details) {
+      details.open = true;
+    }
+  }
+
+  function focusValidationSections(fields) {
+    if (!fields) {
+      return;
+    }
+    var keys = Object.keys(fields);
+    keys.forEach(openDetailsForField);
+    if (keys.some(function (k) {
+      return customerFieldIds.indexOf(k) >= 0;
+    })) {
+      var customerSection = $("docCustomerSection");
+      if (customerSection) {
+        customerSection.open = true;
+      }
+    }
+    if (keys.indexOf("invoiceDiscountValue") >= 0) {
+      var taxSection = $("docTaxSection");
+      if (taxSection) {
+        taxSection.open = true;
+      }
+    }
+  }
+
+  function runDocumentValidation() {
     syncFormToDocument();
-    if (!state.settings.businessName || !state.settings.mobile || !state.settings.address) {
-      setStatus("Complete required business settings before saving.", "error");
-      window.location.href = "settings.html";
+    clearValidationFields();
+    var businessResult = Validation.validateBusinessSettings(state.settings);
+    var docResult = Validation.validateDocument(state.document, state.settings, "generate");
+    var merged = Validation.mergeResults([businessResult, docResult]);
+    if (!merged.ok) {
+      var message = merged.message;
+      if (businessResult && !businessResult.ok) {
+        message = message + " Open Settings to update your business profile.";
+      }
+      setStatus(message, "error");
+      if (merged.fields && Object.keys(merged.fields).length) {
+        showValidationFields(merged.fields);
+        focusValidationSections(merged.fields);
+      } else if (message.indexOf("Supplier state") >= 0) {
+        var taxSec = $("docTaxSection");
+        if (taxSec) {
+          taxSec.open = true;
+        }
+      }
+      return false;
+    }
+    return true;
+  }
+
+  async function saveDraftCurrent() {
+    if (DocumentEditor.isGenerated(state.document)) {
+      return;
+    }
+    if (!runDocumentValidation()) {
       return;
     }
     try {
-      var saved = await DocumentEditor.saveDocument(state.document, state.settings);
+      var saved = await DocumentEditor.saveDraft(state.document, state.settings);
       state.document = saved;
       state.dirty = false;
       syncDocumentToForm();
-      setStatus("Saved " + saved.documentNumber + ".", "ok");
+      setStatus("Draft saved (" + DocumentEditor.displayDocumentNumber(saved, state.settings) + ").", "ok");
     } catch (error) {
       setStatus(error.message || "Save failed.", "error");
+    }
+  }
+
+  async function generateCurrent() {
+    if (DocumentEditor.isGenerated(state.document)) {
+      return;
+    }
+    if (!runDocumentValidation()) {
+      return;
+    }
+    var ok = await confirmModal(
+      "Generate invoice?",
+      "After you generate, this invoice cannot be edited or deleted. Duplicate from History if you need a new copy.",
+      [
+        { label: "Cancel", value: false, className: "secondary" },
+        { label: "Generate", value: true, className: "" }
+      ]
+    );
+    if (!ok) {
+      return;
+    }
+    try {
+      var saved = await DocumentEditor.generateDocument(state.document, state.settings);
+      state.document = saved;
+      state.dirty = false;
+      syncDocumentToForm();
+      setStatus("Generated " + saved.documentNumber + ".", "ok");
+    } catch (error) {
+      setStatus(error.message || "Generate failed.", "error");
     }
   }
 
@@ -556,7 +767,12 @@
         state.document = row;
         state.dirty = false;
         syncDocumentToForm();
-        setStatus("Opened " + row.documentNumber + ".", "info");
+        setStatus(
+          DocumentEditor.isGenerated(row)
+            ? "Opened " + row.documentNumber + " (read only)."
+            : "Opened draft " + DocumentEditor.displayDocumentNumber(row, state.settings) + ".",
+          "info"
+        );
         return true;
       }
       setStatus("Could not open that document.", "error");
@@ -566,10 +782,10 @@
     if (draftRaw) {
       sessionStorage.removeItem(DRAFT_DOC_KEY);
       try {
-        state.document = JSON.parse(draftRaw);
+        state.document = DocumentEditor.normalizeDocument(JSON.parse(draftRaw));
         state.dirty = true;
         syncDocumentToForm();
-        setStatus("Duplicated as a new document. Save to issue a number.", "info");
+        setStatus("Duplicated as a new draft. Save draft or generate when ready.", "info");
         return true;
       } catch (error) {
         setStatus("Could not load duplicated document.", "error");
@@ -603,9 +819,11 @@
       node.addEventListener("input", onEditorChange);
       node.addEventListener("change", function () {
         if (id === "documentType") {
-          if (isUnsavedDraft(state.document)) {
+          if (isEditableDraft(state.document)) {
             state.document.documentType = $("documentType").value;
-            applyDraftDateAndNumber();
+            if (!state.document.id || state.document.isNew) {
+              applyDraftInvoiceDate(state.document);
+            }
             if ($("documentType").value === "tax-invoice") {
               $("gstEnabled").value = "true";
             }
@@ -625,13 +843,28 @@
     });
 
     $("btnAddItem").addEventListener("click", function () {
+      if (DocumentEditor.isGenerated(state.document)) {
+        return;
+      }
       syncFormToDocument();
-      state.document.items.push(Items.createLine());
+      state.document.items.push(Items.createLine({ displayEmpty: true }));
       renderItemsTable(state.document.items);
+      syncFormToDocument();
+      var itemRows = document.querySelectorAll("#itemsBody tr");
+      var lastRow = itemRows[itemRows.length - 1];
+      if (lastRow) {
+        var nameField = lastRow.querySelector(".item-name");
+        if (nameField) {
+          nameField.focus();
+        }
+      }
       refreshPreview();
     });
 
     $("btnPickCatalogue").addEventListener("click", async function () {
+      if (DocumentEditor.isGenerated(state.document)) {
+        return;
+      }
       state.catalogue = await Items.listCatalogue();
       if (!state.catalogue.length) {
         setStatus("Catalogue is empty. Save an item first.", "info");
@@ -648,10 +881,22 @@
       syncFormToDocument();
       state.document.items.push(Items.fromCatalogue(state.catalogue[index]));
       renderItemsTable(state.document.items);
+      syncFormToDocument();
       refreshPreview();
     });
 
-    $("btnSave").addEventListener("click", saveCurrent);
+    var btnSaveDraft = $("btnSaveDraft");
+    var btnGenerate = $("btnGenerate");
+    if (btnSaveDraft) {
+      btnSaveDraft.addEventListener("click", saveDraftCurrent);
+    } else {
+      setStatus("Save draft control missing — hard refresh the page (Ctrl+Shift+R).", "error");
+    }
+    if (btnGenerate) {
+      btnGenerate.addEventListener("click", generateCurrent);
+    } else {
+      setStatus("Generate control missing — hard refresh the page (Ctrl+Shift+R).", "error");
+    }
     $("btnNew").addEventListener("click", async function () {
       if (state.dirty) {
         var ok = await confirmModal("Start new document?", "Unsaved changes will be lost.", [
@@ -666,6 +911,9 @@
     });
     $("btnPng").addEventListener("click", async function () {
       closeExportMenu();
+      if (!runDocumentValidation()) {
+        return;
+      }
       try {
         refreshPreview();
         await ExportPng.exportPng($("invoicePreview"), state.document);
@@ -676,6 +924,9 @@
     });
     $("btnPdf").addEventListener("click", async function () {
       closeExportMenu();
+      if (!runDocumentValidation()) {
+        return;
+      }
       try {
         var calc = refreshPreview();
         var business = state.document.businessSnapshot || state.settings;
@@ -687,6 +938,9 @@
     });
     $("btnPrint").addEventListener("click", function () {
       closeExportMenu();
+      if (!runDocumentValidation()) {
+        return;
+      }
       refreshPreview();
       Print.printDocument();
       setStatus("Print dialog opened.", "info");

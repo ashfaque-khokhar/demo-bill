@@ -48,7 +48,7 @@
 
   <main class="page" aria-label="Invoice editor">
     <div class="layout" id="editorLayout">
-      <div class="editor-pane">
+      <div class="editor-pane" id="editorForm">
         <div class="editor-split">
         <div class="card card--items">
           <div class="card-toolbar panel-controls">
@@ -197,11 +197,13 @@
 
       <div class="editor-action-bar no-print" role="toolbar" aria-label="Document actions">
         <p class="editor-action-bar__heading">Actions</p>
-        <button type="button" class="btn editor-action-bar__save" id="btnSave">Save invoice</button>
+        <p id="editorReadonlyNotice" class="editor-readonly-notice" hidden>Generated — read only. Duplicate from History to make changes.</p>
+        <button type="button" class="btn secondary" id="btnSaveDraft">Save draft</button>
+        <button type="button" class="btn editor-action-bar__save" id="btnGenerate">Generate</button>
         <div class="editor-action-bar__cluster">
           <span class="editor-action-bar__group-label" id="editorActionsMoreLabel">More</span>
           <button type="button" class="btn secondary" id="btnNew">New</button>
-          <details class="editor-action-menu" id="editorExportMenu">
+          <details class="editor-action-menu" id="editorExportMenu" hidden>
             <summary class="btn secondary">Export</summary>
             <div class="editor-action-menu__panel" role="menu" aria-labelledby="editorExportMenuTitle">
               <p class="editor-action-menu__heading" id="editorExportMenuTitle">Download &amp; print</p>
@@ -347,6 +349,7 @@
   <script defer src="vendor/jspdf.umd.min.js"></script>
   <script defer src="js/money.js"></script>
   <script defer src="js/gst.js"></script>
+  <script defer src="js/validation.js"></script>
   <script defer src="js/calculations.js"></script>
   <script defer src="js/document-types.js"></script>
   <script defer src="js/numbering.js"></script>

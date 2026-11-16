@@ -5,13 +5,101 @@
     return document.getElementById(id);
   }
 
-  function setStatus(message, type) {
-    var node = $("status");
-    if (!node) {
+  var TOAST_MAX = 3;
+  var TOAST_MS = 4000;
+
+  function ensureToastHost() {
+    var host = $("toastHost");
+    if (host) {
+      return host;
+    }
+    host = document.createElement("div");
+    host.id = "toastHost";
+    host.className = "toast-host no-print";
+    host.setAttribute("role", "status");
+    host.setAttribute("aria-live", "polite");
+    host.setAttribute("aria-relevant", "additions");
+    document.body.appendChild(host);
+    return host;
+  }
+
+  function dismissToast(el, immediate) {
+    if (!el || !el.parentNode) {
       return;
     }
-    node.textContent = message || "";
-    node.className = "status-bar no-print " + (type || "info");
+    if (el._toastTimer) {
+      clearTimeout(el._toastTimer);
+      el._toastTimer = null;
+    }
+    if (immediate) {
+      el.parentNode.removeChild(el);
+      return;
+    }
+    el.classList.remove("toast--visible");
+    el.classList.add("toast--leaving");
+    el.addEventListener("transitionend", function onEnd() {
+      el.removeEventListener("transitionend", onEnd);
+      if (el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    });
+    setTimeout(function () {
+      if (el.parentNode) {
+        el.parentNode.removeChild(el);
+      }
+    }, 350);
+  }
+
+  function showToast(message, type, options) {
+    if (!message) {
+      return;
+    }
+    type = type || "info";
+    options = options || {};
+    var host = ensureToastHost();
+    while (host.children.length >= TOAST_MAX) {
+      dismissToast(host.firstChild, true);
+    }
+
+    var toast = document.createElement("div");
+    toast.className = "toast toast--" + type;
+
+    var text = document.createElement("p");
+    text.className = "toast__text";
+    text.textContent = message;
+    toast.appendChild(text);
+
+    if (type === "error") {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "toast__dismiss";
+      btn.setAttribute("aria-label", "Dismiss notification");
+      btn.textContent = "\u00d7";
+      btn.addEventListener("click", function () {
+        dismissToast(toast);
+      });
+      toast.appendChild(btn);
+    }
+
+    host.appendChild(toast);
+    requestAnimationFrame(function () {
+      toast.classList.add("toast--visible");
+    });
+
+    var duration = options.duration != null ? options.duration : TOAST_MS;
+    if (type === "error") {
+      duration = Math.max(duration, 6000);
+    }
+    toast._toastTimer = setTimeout(function () {
+      dismissToast(toast);
+    }, duration);
+  }
+
+  function setStatus(message, type) {
+    if (!message) {
+      return;
+    }
+    showToast(message, type || "info");
   }
 
   function openNavDrawer() {
@@ -75,6 +163,55 @@
     });
   }
 
+  function fieldWrapperForInput(input) {
+    if (!input) {
+      return null;
+    }
+    return input.closest(".field");
+  }
+
+  function clearValidationFields() {
+    document.querySelectorAll(".field--invalid").forEach(function (field) {
+      field.classList.remove("field--invalid");
+      var err = field.querySelector(".field-error");
+      if (err) {
+        err.remove();
+      }
+      var control = field.querySelector("input, select, textarea");
+      if (control) {
+        control.removeAttribute("aria-invalid");
+      }
+    });
+  }
+
+  function showValidationFields(fieldMessages) {
+    clearValidationFields();
+    if (!fieldMessages) {
+      return;
+    }
+    Object.keys(fieldMessages).forEach(function (id) {
+      var input = $(id);
+      if (!input) {
+        return;
+      }
+      var field = fieldWrapperForInput(input);
+      if (!field) {
+        return;
+      }
+      field.classList.add("field--invalid");
+      input.setAttribute("aria-invalid", "true");
+      var hint = document.createElement("p");
+      hint.className = "field-error";
+      hint.textContent = fieldMessages[id];
+      var label = field.querySelector("label");
+      if (label && label.nextSibling) {
+        field.insertBefore(hint, label.nextSibling);
+      } else {
+        field.appendChild(hint);
+      }
+    });
+  }
+
   function markActiveNav() {
     var current = document.body.getAttribute("data-page");
     document.querySelectorAll(".nav-drawer-link[data-page]").forEach(function (link) {
@@ -116,8 +253,11 @@
   global.AppUI = {
     $: $,
     setStatus: setStatus,
+    showToast: showToast,
     confirmModal: confirmModal,
     openNavDrawer: openNavDrawer,
-    closeNavDrawer: closeNavDrawer
+    closeNavDrawer: closeNavDrawer,
+    showValidationFields: showValidationFields,
+    clearValidationFields: clearValidationFields
   };
 })(window);

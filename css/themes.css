@@ -31,6 +31,22 @@
   --preview-paper-bg: #ffffff;
 }
 
+[data-theme="dark"] .toast--ok {
+  background: color-mix(in srgb, var(--ok) 22%, var(--surface));
+}
+
+[data-theme="dark"] .toast--error {
+  background: color-mix(in srgb, var(--danger) 20%, var(--surface));
+}
+
+[data-theme="dark"] .toast--info {
+  background: color-mix(in srgb, var(--primary) 18%, var(--surface));
+}
+
+[data-theme="dark"] .toast--info .toast__text {
+  color: var(--primary-dark);
+}
+
 /* Invoice preview stays a white document in dark app chrome */
 [data-theme="dark"] .preview-paper {
   --text: #1f2933;

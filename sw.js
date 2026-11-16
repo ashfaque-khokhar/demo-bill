@@ -1,7 +1,7 @@
 /* global self, caches, fetch */
 "use strict";
 
-var CACHE_VERSION = "billing-pwa-v1";
+var CACHE_VERSION = "billing-pwa-v5";
 var PRECACHE_URLS = [
   "./",
   "./index.html",
@@ -29,6 +29,7 @@ var PRECACHE_URLS = [
   "./js/document-types.js",
   "./js/numbering.js",
   "./js/money.js",
+  "./js/validation.js",
   "./js/theme.js",
   "./js/ui-common.js",
   "./js/pwa.js",

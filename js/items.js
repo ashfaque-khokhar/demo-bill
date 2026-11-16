@@ -57,6 +57,7 @@
     item.defaultRateMinor = Money.roundPaise(item.defaultRateMinor || 0);
     item.defaultTaxRate = Number(item.defaultTaxRate) || 0;
     item.hsnSac = String(item.hsnSac || "");
+    Validation.assertValid(Validation.validateCatalogueItem(item));
     await StorageRepository.put("items", item);
     return item;
   }

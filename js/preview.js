@@ -24,7 +24,7 @@
     return parts[2] + "-" + parts[1] + "-" + parts[0];
   }
 
-  function render(target, doc, calc, business, logoUrl) {
+  function render(target, doc, calc, business, logoUrl, displayNumber) {
     while (target.firstChild) {
       target.removeChild(target.firstChild);
     }
@@ -68,7 +68,13 @@
     var title = el("div", "doc-title");
     title.appendChild(text(type.title));
     meta.appendChild(title);
-    meta.appendChild(el("div")).appendChild(text("No: " + (doc.documentNumber || "—")));
+    var numberLabel = displayNumber != null && displayNumber !== ""
+      ? displayNumber
+      : (doc.documentNumber || "—");
+    if (numberLabel.charAt(0) === "~") {
+      numberLabel = "Draft " + numberLabel.slice(1);
+    }
+    meta.appendChild(el("div")).appendChild(text("No: " + numberLabel));
     meta.appendChild(el("div")).appendChild(text("Date: " + formatDate(doc.invoiceDate)));
     if (showTax && calc.supplyType && calc.supplyType !== "none") {
       meta.appendChild(el("div")).appendChild(text("Supply: " + calc.supplyType));

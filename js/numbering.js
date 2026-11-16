@@ -87,11 +87,30 @@
     };
   }
 
+  function consumeSequenceValue(settings, documentTypeId, dateStr, sequenceValue) {
+    var numbering = settings.numbering || {};
+    if (!numbering.nextSequenceByType) {
+      numbering.nextSequenceByType = {};
+    }
+    if (!numbering.lastYearByType) {
+      numbering.lastYearByType = {};
+    }
+    var info = nextSequence(settings, documentTypeId, dateStr);
+    var current = numbering.nextSequenceByType[documentTypeId];
+    if (typeof current !== "number" || !isFinite(current) || current <= sequenceValue) {
+      numbering.nextSequenceByType[documentTypeId] = sequenceValue + 1;
+    }
+    numbering.lastYearByType[documentTypeId] = info.year;
+    settings.numbering = numbering;
+    return sequenceValue;
+  }
+
   global.Numbering = {
     formatNumber: formatNumber,
     nextSequence: nextSequence,
     reserveNext: reserveNext,
     buildDocumentNumber: buildDocumentNumber,
-    peekNumber: peekNumber
+    peekNumber: peekNumber,
+    consumeSequenceValue: consumeSequenceValue
   };
 })(window);

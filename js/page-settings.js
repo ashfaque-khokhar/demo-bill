@@ -214,8 +214,11 @@
     $("btnSaveSettings").addEventListener("click", async function () {
       try {
         readSettingsForm();
-        if (!state.settings.businessName || !state.settings.mobile || !state.settings.address) {
-          setStatus("Business name, mobile, and address are required.", "error");
+        AppUI.clearValidationFields();
+        var validation = Validation.validateBusinessSettings(state.settings);
+        if (!validation.ok) {
+          AppUI.showValidationFields(validation.fields);
+          setStatus(validation.message, "error");
           return;
         }
         await Settings.save(state.settings);
@@ -243,12 +246,17 @@
         return;
       }
       var rate = window.prompt("Default rate (₹)", "0");
-      await Items.saveCatalogueItem({
-        name: name.trim(),
-        defaultRateMinor: Money.toPaise(rate),
-        unit: "Piece",
-        defaultTaxRate: 0
-      });
+      try {
+        await Items.saveCatalogueItem({
+          name: name.trim(),
+          defaultRateMinor: Money.toPaise(rate),
+          unit: "Piece",
+          defaultTaxRate: 0
+        });
+      } catch (error) {
+        setStatus(error.message || "Could not add catalogue item.", "error");
+        return;
+      }
       renderCatalogue();
       setStatus("Catalogue item added.", "ok");
     });

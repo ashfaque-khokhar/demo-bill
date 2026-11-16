@@ -27,14 +27,21 @@
       if (!query) {
         return true;
       }
-      var hay = (row.documentNumber + " " + ((row.customer && row.customer.name) || "")).toLowerCase();
+      var displayNo = DocumentEditor.displayDocumentNumber(row, state.settings);
+      var hay = (displayNo + " " + row.documentNumber + " " + ((row.customer && row.customer.name) || "")).toLowerCase();
       return hay.indexOf(query) >= 0;
     }).forEach(function (row) {
       var item = document.createElement("div");
       item.className = "history-item";
       var info = document.createElement("div");
       var strong = document.createElement("strong");
-      strong.textContent = row.documentNumber + " · " + DocumentTypes.getById(row.documentType).title;
+      var statusChip = document.createElement("span");
+      var isGenerated = DocumentEditor.isGenerated(row);
+      statusChip.className = "history-status " + (isGenerated ? "history-status--generated" : "history-status--draft");
+      statusChip.textContent = isGenerated ? "Generated" : "Draft";
+      var listNumber = DocumentEditor.displayDocumentNumber(row, state.settings);
+      strong.appendChild(document.createTextNode(listNumber + " · " + DocumentTypes.getById(row.documentType).title + " "));
+      strong.appendChild(statusChip);
       var span = document.createElement("span");
       span.textContent = ((row.customer && row.customer.name) || "No customer") +
         " · " + Preview.formatDate(row.invoiceDate) +
@@ -62,18 +69,27 @@
         sessionStorage.setItem(DRAFT_DOC_KEY, JSON.stringify(draft));
         window.location.href = "index.html";
       }));
-      actions.appendChild(makeBtn("Delete", async function () {
-        var ok = await confirmModal("Delete document?", "Delete " + row.documentNumber + "? This cannot be undone.", [
-          { label: "Cancel", value: false, className: "secondary" },
-          { label: "Delete", value: true, className: "danger" }
-        ]);
-        if (!ok) {
-          return;
-        }
-        await DocumentEditor.deleteDocument(row.id);
-        setStatus("Deleted " + row.documentNumber + ".", "ok");
-        refreshHistory();
-      }));
+      if (!DocumentEditor.isGenerated(row)) {
+        actions.appendChild(makeBtn("Delete", async function () {
+          var ok = await confirmModal(
+            "Delete document?",
+            "Delete " + DocumentEditor.displayDocumentNumber(row, state.settings) + "? This cannot be undone.",
+            [
+            { label: "Cancel", value: false, className: "secondary" },
+            { label: "Delete", value: true, className: "danger" }
+          ]);
+          if (!ok) {
+            return;
+          }
+          try {
+            await DocumentEditor.deleteDocument(row.id);
+            setStatus("Deleted " + listNumber + ".", "ok");
+            refreshHistory();
+          } catch (error) {
+            setStatus(error.message || "Delete failed.", "error");
+          }
+        }));
+      }
 
       item.appendChild(info);
       item.appendChild(actions);

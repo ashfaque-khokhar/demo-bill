@@ -129,6 +129,14 @@
   .settings-page {
     padding-bottom: 96px;
   }
+
+  body[data-page="editor"] .toast-host {
+    bottom: max(88px, calc(16px + env(safe-area-inset-bottom, 0px)));
+  }
+
+  body[data-page="settings"] .toast-host {
+    bottom: max(80px, calc(16px + env(safe-area-inset-bottom, 0px)));
+  }
 }
 
 @media (max-width: 480px) {
