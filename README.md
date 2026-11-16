@@ -13,6 +13,23 @@ python3 -m http.server 8080
 
 Then open `http://localhost:8080` (Editor).
 
+Service workers and install prompts require **HTTPS** in production (localhost is fine for development). Opening pages via `file://` does not register the PWA.
+
+## Installable PWA (offline)
+
+After one **online** visit while the service worker installs, the app shell (HTML, CSS, JS, icons, and bundled font) is cached. Invoices and settings stay in **IndexedDB** on the device — no server.
+
+1. Serve the app over `http://localhost` or HTTPS.
+2. Open the Editor once and wait for the service worker to activate (DevTools → Application → Service workers).
+3. Install from the browser menu (e.g. Chrome **Install app**, or **Add to Home Screen** on mobile).
+4. Turn on **Offline** in DevTools and confirm Editor, Settings, History, and Backup still load.
+
+**Updates:** when you change static files, bump `CACHE_VERSION` in `sw.js` and add any new script paths to `PRECACHE_URLS` in the same file.
+
+**Limits:** clearing site data removes both the cache and IndexedDB. Use **Backup** before clearing storage or uninstalling; iOS may evict unused installed apps over time.
+
+Place the PDF font at `assets/fonts/NotoSans-Regular.ttf` (see `js/export-pdf.js`); offline PDF export needs that file present at install time.
+
 ## Pages
 
 | Page | File | Purpose |
@@ -32,6 +49,7 @@ Shared chrome and navigation live in each page; page logic is in `js/ui-common.j
 - Item catalogue, line + invoice discounts
 - Indian GST: CGST+SGST / IGST (tax-exclusive; discount before tax)
 - Live preview, PNG, direct PDF (local jsPDF + Noto Sans), print
+- Installable PWA with offline app shell (`manifest.webmanifest`, `sw.js`)
 - History (open / duplicate / delete) and JSON backup/restore
 
 ## Defaults used (owner checklist)

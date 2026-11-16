@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#2d5a7f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Billing">
+  <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
   <title>Editor · Billing Generator</title>
   <script>
   (function(){try{var m=localStorage.getItem("billing.theme")||"system";var d=m==="dark"||(m==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light");document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();
@@ -175,25 +181,6 @@
           </div>
         </div>
         </div>
-
-        <div class="editor-action-bar no-print" role="toolbar" aria-label="Document actions">
-          <p class="editor-action-bar__heading">Actions</p>
-          <button type="button" class="btn editor-action-bar__save" id="btnSave">Save invoice</button>
-          <div class="editor-action-bar__cluster">
-            <span class="editor-action-bar__group-label" id="editorActionsMoreLabel">More</span>
-            <button type="button" class="btn secondary" id="btnNew">New</button>
-            <details class="editor-action-menu" id="editorExportMenu">
-              <summary class="btn secondary">Export</summary>
-              <div class="editor-action-menu__panel" role="menu" aria-labelledby="editorExportMenuTitle">
-                <p class="editor-action-menu__heading" id="editorExportMenuTitle">Download &amp; print</p>
-                <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPng">PNG image</button>
-                <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPdf">PDF file</button>
-                <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPrint">Print</button>
-              </div>
-            </details>
-            <button type="button" class="btn secondary" id="btnPreviewToggle" aria-expanded="false" aria-controls="previewShell">Preview</button>
-          </div>
-        </div>
       </div>
 
       <aside class="preview-shell card" id="previewShell" aria-label="Live invoice preview">
@@ -207,6 +194,25 @@
           <div id="invoicePreview" class="invoice-preview"></div>
         </div>
       </aside>
+
+      <div class="editor-action-bar no-print" role="toolbar" aria-label="Document actions">
+        <p class="editor-action-bar__heading">Actions</p>
+        <button type="button" class="btn editor-action-bar__save" id="btnSave">Save invoice</button>
+        <div class="editor-action-bar__cluster">
+          <span class="editor-action-bar__group-label" id="editorActionsMoreLabel">More</span>
+          <button type="button" class="btn secondary" id="btnNew">New</button>
+          <details class="editor-action-menu" id="editorExportMenu">
+            <summary class="btn secondary">Export</summary>
+            <div class="editor-action-menu__panel" role="menu" aria-labelledby="editorExportMenuTitle">
+              <p class="editor-action-menu__heading" id="editorExportMenuTitle">Download &amp; print</p>
+              <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPng">PNG image</button>
+              <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPdf">PDF file</button>
+              <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPrint">Print</button>
+            </div>
+          </details>
+          <button type="button" class="btn secondary" id="btnPreviewToggle" aria-expanded="false" aria-controls="previewShell">Preview</button>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -357,6 +363,7 @@
   <script defer src="js/onboarding.js"></script>
   <script defer src="js/theme.js"></script>
   <script defer src="js/ui-common.js"></script>
+  <script defer src="js/pwa.js"></script>
   <script defer src="js/page-editor.js"></script>
 </body>
 </html>

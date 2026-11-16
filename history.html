@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#2d5a7f">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Billing">
+  <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
   <title>History · Billing Generator</title>
   <script>
   (function(){try{var m=localStorage.getItem("billing.theme")||"system";var d=m==="dark"||(m==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light");document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();
@@ -77,6 +83,7 @@
   <script defer src="js/document-editor.js"></script>
   <script defer src="js/theme.js"></script>
   <script defer src="js/ui-common.js"></script>
+  <script defer src="js/pwa.js"></script>
   <script defer src="js/page-history.js"></script>
 </body>
 </html>
