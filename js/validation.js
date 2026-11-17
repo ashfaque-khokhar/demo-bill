@@ -467,28 +467,6 @@
     return mergeResults(checks.filter(Boolean));
   }
 
-  function validateCatalogueItem(item) {
-    var checks = [];
-    var req = requiredText(item && item.name, null, "Item name");
-    if (req) {
-      checks.push(req);
-    }
-    checks.push(maxLengthText(item && item.name, "lineItemName", null, "Item name"));
-    checks.push(maxLengthText(item && item.unit, "lineItemUnit", null, "Unit"));
-    checks.push(maxLengthText(item && item.hsnSac, "hsnSac", null, "HSN/SAC"));
-    var rate = Number(item && item.defaultRateMinor);
-    if (!isFinite(rate) || rate < 0) {
-      checks.push(fail("Default rate must be zero or greater."));
-    } else {
-      checks.push(maxAmountMinor(rate, "Default rate", null));
-    }
-    var tax = Number(item && item.defaultTaxRate);
-    if (!isFinite(tax) || tax < 0 || tax > 100) {
-      checks.push(fail("Tax rate must be between 0 and 100."));
-    }
-    return mergeResults(checks);
-  }
-
   function assertValid(result) {
     if (!result || result.ok) {
       return;
@@ -512,7 +490,6 @@
     isMeaningfulLine: isMeaningfulLine,
     validateLineItems: validateLineItems,
     validateDocument: validateDocument,
-    validateCatalogueItem: validateCatalogueItem,
     assertValid: assertValid,
     mergeResults: mergeResults
   };

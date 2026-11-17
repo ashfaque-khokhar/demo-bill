@@ -1,6 +1,14 @@
 (function (global) {
   "use strict";
 
+  function defaultDiscountOptions() {
+    return {
+      itemLevel: true,
+      invoiceLevel: true,
+      taxTreatment: "before-tax"
+    };
+  }
+
   function defaultSettings() {
     return {
       id: "default",
@@ -37,6 +45,7 @@
       currencySymbol: "₹",
       dateFormat: "DD-MM-YYYY",
       paperSize: "A4",
+      discount: defaultDiscountOptions(),
       headings: {
         item: "Item",
         quantity: "Qty",
@@ -72,6 +81,7 @@
       currencyCode: settings.currencyCode,
       currencySymbol: settings.currencySymbol,
       headings: settings.headings,
+      discount: settings.discount,
       logoWidth: settings.logoWidth,
       logoHeight: settings.logoHeight,
       logoAlignment: settings.logoAlignment,
@@ -90,7 +100,8 @@
     var base = defaultSettings();
     return Object.assign(base, existing, {
       numbering: Object.assign(base.numbering, existing.numbering || {}),
-      headings: Object.assign(base.headings, existing.headings || {})
+      headings: Object.assign(base.headings, existing.headings || {}),
+      discount: Object.assign(base.discount, existing.discount || {})
     });
   }
 
@@ -103,6 +114,7 @@
 
   global.Settings = {
     defaultSettings: defaultSettings,
+    defaultDiscountOptions: defaultDiscountOptions,
     snapshot: snapshot,
     load: load,
     save: save

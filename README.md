@@ -35,7 +35,7 @@ Place the PDF font at `assets/fonts/NotoSans-Regular.ttf` (see `js/export-pdf.js
 | Page | File | Purpose |
 |------|------|---------|
 | Editor | `index.html` | Create / edit invoices, preview, export |
-| Settings | `settings.html` | Business details, logo, numbering, catalogue |
+| Settings | `settings.html` | Business details, logo, numbering |
 | History | `history.html` | Open, duplicate, or delete saved documents |
 | Backup | `backup.html` | JSON backup download / import |
 
@@ -46,7 +46,7 @@ Shared chrome and navigation live in each page; page logic is in `js/ui-common.j
 - Business settings + logo (IndexedDB)
 - Document types: Bill, Cash Memo, Quotation, Receipt, Tax Invoice
 - Custom numbering `{PREFIX}/{YYYY}/{SEQ}` (per type)
-- Item catalogue, line + invoice discounts
+- Line + invoice discounts
 - Indian GST: CGST+SGST / IGST (tax-exclusive; discount before tax)
 - Live preview, PNG, direct PDF (local jsPDF + Noto Sans), print
 - Installable PWA with offline app shell (`manifest.webmanifest`, `sw.js`)

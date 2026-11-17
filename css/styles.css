@@ -706,7 +706,7 @@ table.items .text-limit-counter {
 table.items {
   width: 100%;
   border-collapse: collapse;
-  min-width: 780px;
+  min-width: 700px;
 }
 
 table.items th,
@@ -745,43 +745,56 @@ table.items .item-name-cell {
 
 table.items .item-disc-cell {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 6px;
-  min-width: 6.5rem;
+  min-width: 3.75rem;
+  max-width: 4.75rem;
 }
 
 table.items .item-disc-cell .item-disc-type {
-  flex: 0 0 auto;
-  min-width: 3.25rem;
-  width: auto;
-}
-
-table.items .item-disc-cell .item-disc-value {
-  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
 }
 
-table.items .item-unit-cell,
+table.items .item-disc-cell .item-disc-value {
+  width: 100%;
+  min-width: 0;
+}
+
+table.items .item-unit-cell {
+  min-width: 0;
+  max-width: 5rem;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+table.items .item-unit-cell .item-unit {
+  width: 100%;
+  min-width: 0;
+  padding-left: 4px;
+  padding-right: 4px;
+  font-size: 0.85rem;
+}
+
 table.items .item-gst-cell {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-width: 5.5rem;
+  min-width: 5rem;
 }
 
-table.items .item-unit-cell .item-unit,
 table.items .item-gst-cell .item-gst {
   flex: 0 0 auto;
-  min-width: 4.5rem;
+  min-width: 4rem;
   width: auto;
 }
 
-table.items .item-unit-other--hidden,
-table.items .item-gst-other--hidden {
+table.items .item-gst-other--hidden,
+table.items .item-disc-value--hidden {
   display: none;
 }
 
-table.items .item-unit-other:not(.item-unit-other--hidden),
 table.items .item-gst-other:not(.item-gst-other--hidden) {
   flex: 1 1 auto;
   min-width: 0;
@@ -790,20 +803,33 @@ table.items .item-gst-other:not(.item-gst-other--hidden) {
 
 table.items th:nth-child(2),
 table.items td:nth-child(2) {
-  min-width: 3.25rem;
+  width: 3.25rem;
+  min-width: 3rem;
+  max-width: 3.75rem;
+  padding-left: 6px;
+  padding-right: 6px;
 }
 
 table.items th:nth-child(3),
 table.items td:nth-child(3) {
-  min-width: 5.5rem;
+  width: 4.5rem;
+  min-width: 4.25rem;
+  max-width: 5rem;
 }
 
 table.items th:nth-child(4),
-table.items td:nth-child(4),
+table.items td:nth-child(4) {
+  width: 4.25rem;
+  min-width: 3.75rem;
+  max-width: 5rem;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
 table.items th:nth-child(6),
 table.items td:nth-child(6),
-table.items th:nth-child(8),
-table.items td:nth-child(8) {
+table.items th:nth-child(7),
+table.items td:nth-child(7) {
   min-width: 4.5rem;
 }
 
@@ -811,6 +837,8 @@ table.items .item-qty,
 table.items .item-rate,
 table.items .item-gst-other:not(.item-gst-other--hidden),
 table.items .item-disc-value {
+  padding-left: 4px;
+  padding-right: 4px;
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -818,7 +846,7 @@ table.items .item-disc-value {
 table.items th:nth-child(2),
 table.items th:nth-child(4),
 table.items th:nth-child(6),
-table.items th:nth-child(8) {
+table.items th:nth-child(7) {
   text-align: right;
 }
 
@@ -855,6 +883,88 @@ table.items td.item-row-actions {
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 12%, transparent);
   border-color: transparent;
+}
+
+.items-panel {
+  min-height: 8rem;
+}
+
+.items-empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 10rem;
+  padding: 24px 16px;
+}
+
+.items-empty-state[hidden] {
+  display: none;
+}
+
+.items-add-center {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 32px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  background: var(--elevated);
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.items-add-center:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.items-add-center svg {
+  color: var(--accent);
+}
+
+.items-list-wrap[hidden] {
+  display: none;
+}
+
+table.items.items--list tbody tr.items-summary-row {
+  cursor: pointer;
+}
+
+table.items.items--list tbody tr.items-summary-row:hover td {
+  background: var(--elevated);
+}
+
+table.items.items--list .items-summary-disc {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.modal--item-editor {
+  max-width: 440px;
+}
+
+.item-editor-form {
+  margin-bottom: 12px;
+}
+
+.item-editor-amount-value {
+  margin: 4px 0 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.item-editor-actions {
+  justify-content: flex-end;
+}
+
+#itemEditDiscValueField[hidden],
+#itemEditGstOtherField[hidden] {
+  display: none;
 }
 
 .totals-box {

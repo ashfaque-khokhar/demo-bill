@@ -106,45 +106,6 @@
     return s;
   }
 
-  async function renderCatalogue() {
-    var catalogue = await Items.listCatalogue();
-    var list = $("catalogueList");
-    while (list.firstChild) {
-      list.removeChild(list.firstChild);
-    }
-    catalogue.forEach(function (entry) {
-      var item = document.createElement("div");
-      item.className = "history-item";
-      var info = document.createElement("div");
-      var strong = document.createElement("strong");
-      strong.textContent = entry.name;
-      var span = document.createElement("span");
-      span.textContent = (entry.unit || "Piece") + " · " + Money.formatINR(entry.defaultRateMinor || 0);
-      info.appendChild(strong);
-      info.appendChild(span);
-      var actions = document.createElement("div");
-      actions.className = "history-actions";
-      var del = document.createElement("button");
-      del.type = "button";
-      del.className = "btn secondary";
-      del.textContent = "Delete";
-      del.addEventListener("click", async function () {
-        await Items.deleteCatalogueItem(entry.id);
-        renderCatalogue();
-      });
-      actions.appendChild(del);
-      item.appendChild(info);
-      item.appendChild(actions);
-      list.appendChild(item);
-    });
-    if (!list.firstChild) {
-      var empty = document.createElement("p");
-      empty.className = "hint";
-      empty.textContent = "No catalogue items yet.";
-      list.appendChild(empty);
-    }
-  }
-
   async function handleLogoUpload(file) {
     if (!file) {
       return;
@@ -240,54 +201,6 @@
       setStatus("Logo cleared.", "ok");
     });
 
-    $("btnAddCatalogue").addEventListener("click", async function () {
-      var name = window.prompt("Catalogue item name");
-      if (!name) {
-        return;
-      }
-      var maxName = Validation.LIMITS.lineItemName;
-      if (name.length > maxName) {
-        setStatus("Item name must be at most " + maxName + " characters.", "error");
-        return;
-      }
-      var rate = window.prompt("Default rate (₹)", "0");
-      if (rate == null) {
-        return;
-      }
-      rate = Money.sanitizeNonNegativeNumber(rate, true);
-      var rateMinor = Money.toPaise(rate);
-      var rateCap = Validation.maxAmountMinor(rateMinor, "Default rate", null);
-      if (rateCap) {
-        setStatus(rateCap.message, "error");
-        return;
-      }
-      var unit = Items.pickUnitViaPrompt("1");
-      if (!unit) {
-        return;
-      }
-      var maxUnit = Validation.LIMITS.lineItemUnit;
-      if (unit.length > maxUnit) {
-        setStatus("Unit must be at most " + maxUnit + " characters.", "error");
-        return;
-      }
-      var defaultTaxRate = Items.pickGstViaPrompt("1");
-      if (defaultTaxRate == null) {
-        return;
-      }
-      try {
-        await Items.saveCatalogueItem({
-          name: name.trim(),
-          defaultRateMinor: rateMinor,
-          unit: unit,
-          defaultTaxRate: defaultTaxRate
-        });
-      } catch (error) {
-        setStatus(error.message || "Could not add catalogue item.", "error");
-        return;
-      }
-      renderCatalogue();
-      setStatus("Catalogue item added.", "ok");
-    });
   }
 
   async function init() {
@@ -299,8 +212,7 @@
       state.settings = await Settings.load();
       await loadLogo(state.settings);
       fillSettingsForm();
-      await renderCatalogue();
-      setStatus("Edit business details, logo, numbering, and catalogue.", "info");
+      setStatus("Edit business details, logo, and numbering.", "info");
     } catch (error) {
       setStatus(error.message || "Could not load settings.", "error");
     }

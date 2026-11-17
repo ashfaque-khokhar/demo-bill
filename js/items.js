@@ -1,7 +1,6 @@
 (function (global) {
   "use strict";
 
-  var UNIT_SELECT_OTHER = "other";
   var GST_SELECT_OTHER = "other";
 
   var PRESET_GST_RATES = [0, 5, 12, 18, 28];
@@ -21,9 +20,6 @@
     "Pack",
     "Dozen",
     "Set",
-    "Hour",
-    "Day",
-    "Month",
     "Service"
   ];
 
@@ -50,46 +46,6 @@
     return line;
   }
 
-  function fromCatalogue(entry) {
-    return createLine({
-      catalogueItemId: entry.id,
-      name: entry.name || "",
-      unit: entry.unit || "Piece",
-      rateMinor: entry.defaultRateMinor || 0,
-      gstRate: entry.defaultTaxRate || 0,
-      hsnSac: entry.hsnSac || ""
-    });
-  }
-
-  async function listCatalogue() {
-    var rows = await StorageRepository.getAll("items");
-    rows.sort(function (a, b) {
-      return String(a.name).localeCompare(String(b.name));
-    });
-    return rows;
-  }
-
-  async function saveCatalogueItem(item) {
-    if (!item.id) {
-      item.id = createId();
-      item.createdAt = Date.now();
-    }
-    item.updatedAt = Date.now();
-    item.name = String(item.name || "").trim();
-    delete item.description;
-    item.unit = String(item.unit || "Piece");
-    item.defaultRateMinor = Money.roundPaise(item.defaultRateMinor || 0);
-    item.defaultTaxRate = Number(item.defaultTaxRate) || 0;
-    item.hsnSac = String(item.hsnSac || "");
-    Validation.assertValid(Validation.validateCatalogueItem(item));
-    await StorageRepository.put("items", item);
-    return item;
-  }
-
-  async function deleteCatalogueItem(id) {
-    await StorageRepository.remove("items", id);
-  }
-
   function resolveUnitControl(unit) {
     var u = String(unit == null ? "" : unit).trim();
     if (!u) {
@@ -98,7 +54,7 @@
     if (PRESET_UNITS.indexOf(u) >= 0) {
       return { mode: "preset", value: u };
     }
-    return { mode: "other", value: u };
+    return { mode: "preset", value: "Piece" };
   }
 
   function readUnitFromRow(tr) {
@@ -110,19 +66,13 @@
     if (!v) {
       return "";
     }
-    if (v === UNIT_SELECT_OTHER) {
-      var other = tr.querySelector(".item-unit-other");
-      return String(other && other.value ? other.value : "").trim();
-    }
     return String(v).trim();
   }
 
   function unitPickerPromptLines() {
-    var lines = PRESET_UNITS.map(function (u, i) {
+    return PRESET_UNITS.map(function (u, i) {
       return i + 1 + ". " + u;
-    });
-    lines.push(PRESET_UNITS.length + 1 + ". Other (custom)");
-    return lines.join("\n");
+    }).join("\n");
   }
 
   function resolveGstControl(rate) {
@@ -199,31 +149,15 @@
     if (index <= PRESET_UNITS.length) {
       return PRESET_UNITS[index - 1];
     }
-    if (index === PRESET_UNITS.length + 1) {
-      var custom = window.prompt("Custom unit");
-      if (custom == null) {
-        return null;
-      }
-      custom = String(custom).trim();
-      if (!custom) {
-        return null;
-      }
-      return custom;
-    }
     return null;
   }
 
   global.Items = {
-    UNIT_SELECT_OTHER: UNIT_SELECT_OTHER,
     GST_SELECT_OTHER: GST_SELECT_OTHER,
     PRESET_UNITS: PRESET_UNITS,
     PRESET_GST_RATES: PRESET_GST_RATES,
     createId: createId,
     createLine: createLine,
-    fromCatalogue: fromCatalogue,
-    listCatalogue: listCatalogue,
-    saveCatalogueItem: saveCatalogueItem,
-    deleteCatalogueItem: deleteCatalogueItem,
     resolveUnitControl: resolveUnitControl,
     readUnitFromRow: readUnitFromRow,
     resolveGstControl: resolveGstControl,

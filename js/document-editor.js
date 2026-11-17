@@ -80,7 +80,7 @@
         discountTaxTreatment: "before-tax"
       },
       discount: { type: "none", value: 0 },
-      items: [Items.createLine({ displayEmpty: true })],
+      items: [],
       notes: "",
       paperSize: settings.paperSize || "A4",
       currencyCode: "INR",

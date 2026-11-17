@@ -19,9 +19,11 @@
     document: null,
     logoUrl: null,
     logoDataUrl: null,
-    catalogue: [],
     dirty: false
   };
+
+  var itemEditorEditingId = null;
+  var itemEditorItemRef = null;
 
   function paperSize() {
     return (state.settings && state.settings.paperSize) || "A4";
@@ -196,7 +198,9 @@
     doc.gst.placeOfSupply = doc.customer.state || "";
     clearInvoiceDiscount(doc);
     doc.notes = $("notes").value;
-    doc.items = readItemsFromTable();
+    if (!Array.isArray(doc.items)) {
+      doc.items = [];
+    }
     return doc;
   }
 
@@ -249,6 +253,13 @@
     }
   }
 
+  function syncDiscountValueVisibility(type, input) {
+    if (!input) {
+      return;
+    }
+    input.classList.toggle("item-disc-value--hidden", type === "none");
+  }
+
   function clearInvoiceDiscount(doc) {
     if (!doc || DocumentEditor.isGenerated(doc)) {
       return;
@@ -298,24 +309,21 @@
       customerSection.open = false;
     }
 
-    document.querySelectorAll("#itemsBody input, #itemsBody select, #itemsBody textarea").forEach(function (node) {
-      node.disabled = disabled;
-    });
     document.querySelectorAll("#itemsBody .row-actions button").forEach(function (node) {
       node.hidden = disabled;
     });
+    var btnAddCenter = $("btnAddItemCenter");
+    if (btnAddCenter) {
+      btnAddCenter.disabled = disabled;
+    }
 
     var btnAdd = $("btnAddItem");
-    var btnPick = $("btnPickCatalogue");
     var btnSaveDraft = $("btnSaveDraft");
     var btnGenerate = $("btnGenerate");
     var notice = $("editorReadonlyNotice");
     var exportMenu = $("editorExportMenu");
     if (btnAdd) {
       btnAdd.hidden = disabled;
-    }
-    if (btnPick) {
-      btnPick.hidden = disabled;
     }
     if (btnSaveDraft) {
       btnSaveDraft.hidden = disabled;
@@ -351,8 +359,7 @@
     $("supplyType").value = (doc.gst && doc.gst.supplyType) || "auto";
     clearInvoiceDiscount(doc);
     $("notes").value = doc.notes || "";
-    renderItemsTable(doc.items || []);
-    ensureTrailingEmptyRow();
+    renderItemsList(doc.items || []);
     syncDocumentCardUi();
     syncCustomerSectionUi(true);
     applyEditorMode();
@@ -368,94 +375,178 @@
     return isFinite(n) ? n : 0;
   }
 
-  function isRowBlank(tr) {
-    if (!tr) {
-      return true;
+  function formatItemDiscountLabel(type, value) {
+    if (type === "percent") {
+      return value > 0 ? value + "%" : "—";
     }
-    var nameEl = tr.querySelector(".item-name");
-    if (nameEl && nameEl.value.trim()) {
-      return false;
+    if (type === "fixed") {
+      return value > 0 ? Money.formatINR(Money.toPaise(value)) : "—";
     }
-    var qtyEl = tr.querySelector(".item-qty");
-    if (qtyEl && qtyEl.value.trim()) {
-      return false;
-    }
-    var unitSel = tr.querySelector(".item-unit");
-    if (unitSel && unitSel.value) {
-      return false;
-    }
-    var rateEl = tr.querySelector(".item-rate");
-    if (rateEl && rateEl.value.trim()) {
-      return false;
-    }
-    var discType = tr.querySelector(".item-disc-type");
-    if (discType && discType.value && discType.value !== "none") {
-      return false;
-    }
-    var discValue = tr.querySelector(".item-disc-value");
-    if (discValue && discValue.value.trim() && readOptionalNumber(discValue.value) > 0) {
-      return false;
-    }
-    var gstSel = tr.querySelector(".item-gst");
-    if (gstSel && gstSel.value) {
-      return false;
-    }
-    var hsnEl = tr.querySelector(".item-hsn");
-    if (hsnEl && hsnEl.value.trim()) {
-      return false;
-    }
-    return true;
+    return "—";
   }
 
-  function isRowComplete(tr) {
-    if (!tr) {
-      return false;
+  function readGstFromItemEditor() {
+    var sel = $("itemEditGst");
+    if (!sel) {
+      return 0;
     }
-    var nameEl = tr.querySelector(".item-name");
-    if (!nameEl || !nameEl.value.trim()) {
-      return false;
+    if (sel.value === Items.GST_SELECT_OTHER) {
+      var other = $("itemEditGstOther");
+      var n = Number(other && other.value);
+      return isFinite(n) ? n : 0;
     }
-    if (!Items.readUnitFromRow(tr)) {
-      return false;
-    }
-    var qty = readOptionalNumber(tr.querySelector(".item-qty") && tr.querySelector(".item-qty").value);
-    if (!isFinite(qty) || qty <= 0) {
-      return false;
-    }
-    var rateInput = tr.querySelector(".item-rate") ? tr.querySelector(".item-rate").value.trim() : "";
-    if (!rateInput || Money.toPaise(rateInput) <= 0) {
-      return false;
-    }
-    return true;
+    return Number(sel.value) || 0;
   }
 
-  function focusRowName(tr) {
-    var nameField = tr && tr.querySelector(".item-name");
-    if (nameField) {
-      nameField.focus();
-    }
+  function readLineFromItemEditor() {
+    var nameEl = $("itemEditName");
+    var qtyEl = $("itemEditQty");
+    var unitEl = $("itemEditUnit");
+    var rateEl = $("itemEditRate");
+    var discTypeEl = $("itemEditDiscType");
+    var discValEl = $("itemEditDiscValue");
+    return {
+      id: itemEditorEditingId || Items.createId(),
+      catalogueItemId: itemEditorItemRef ? itemEditorItemRef.catalogueItemId || null : null,
+      name: nameEl ? String(nameEl.value || "").trim() : "",
+      quantity: readOptionalNumber(qtyEl ? qtyEl.value : ""),
+      unit: unitEl ? String(unitEl.value || "").trim() : "",
+      rateMinor: Money.toPaise(rateEl ? String(rateEl.value || "").trim() : ""),
+      discountType: discTypeEl ? discTypeEl.value : "none",
+      discountValue: Number(discValEl ? discValEl.value : 0) || 0,
+      hsnSac: itemEditorItemRef ? itemEditorItemRef.hsnSac || "" : "",
+      gstRate: readGstFromItemEditor()
+    };
   }
 
-  function appendEmptyItemRow() {
-    var body = $("itemsBody");
-    if (!body) {
+  function previewEditorLineAmount(line) {
+    var stub = {
+      gst: state.document && state.document.gst ? state.document.gst : { enabled: false },
+      items: [line]
+    };
+    var calc = Calculations.calculateDocument(stub, state.settings);
+    if (calc.items && calc.items[0]) {
+      return calc.items[0].lineTotalMinor;
+    }
+    return 0;
+  }
+
+  function updateItemEditorAmountPreview() {
+    var el = $("itemEditAmount");
+    if (!el) {
       return;
     }
-    body.appendChild(buildItemRow(Items.createLine({ displayEmpty: true })));
+    var line = readLineFromItemEditor();
+    el.textContent = Money.formatINR(previewEditorLineAmount(line));
   }
 
-  function ensureTrailingEmptyRow() {
+  function syncItemEditorDiscVisibility() {
+    var type = $("itemEditDiscType").value;
+    syncDiscountValueInputMax(type, $("itemEditDiscValue"));
+    var field = $("itemEditDiscValueField");
+    if (field) {
+      field.hidden = type === "none";
+    }
+  }
+
+  function syncItemEditorGstOtherVisibility() {
+    var isOther = $("itemEditGst").value === Items.GST_SELECT_OTHER;
+    var field = $("itemEditGstOtherField");
+    if (field) {
+      field.hidden = !isOther;
+    }
+  }
+
+  function populateItemEditorSelects() {
+    var unitSel = $("itemEditUnit");
+    if (unitSel && !unitSel.options.length) {
+      Items.PRESET_UNITS.forEach(function (label) {
+        var opt = document.createElement("option");
+        opt.value = label;
+        opt.textContent = label;
+        unitSel.appendChild(opt);
+      });
+    }
+    var gstSel = $("itemEditGst");
+    if (gstSel && !gstSel.options.length) {
+      Items.PRESET_GST_RATES.forEach(function (rate) {
+        var opt = document.createElement("option");
+        opt.value = String(rate);
+        opt.textContent = rate + "%";
+        gstSel.appendChild(opt);
+      });
+      var other = document.createElement("option");
+      other.value = Items.GST_SELECT_OTHER;
+      other.textContent = "Other";
+      gstSel.appendChild(other);
+    }
+  }
+
+  function fillItemEditorForm(item) {
+    var line = item || Items.createLine({ quantity: 1 });
+    var inDocument = item && (state.document.items || []).some(function (row) {
+      return row.id === item.id;
+    });
+    itemEditorEditingId = inDocument ? item.id : null;
+    itemEditorItemRef = item ? Object.assign({}, item) : null;
+    $("itemEditorTitle").textContent = item ? "Edit item" : "Add item";
+    $("itemEditName").value = line.name || "";
+    $("itemEditQty").value = item ? String(line.quantity) : "1";
+    $("itemEditUnit").value = Items.resolveUnitControl(line.unit || "Piece").value || "Piece";
+    $("itemEditRate").value = item ? Money.fromPaise(line.rateMinor || 0).toFixed(2) : "";
+    $("itemEditDiscType").value = line.discountType || "none";
+    $("itemEditDiscValue").value = line.discountValue || "";
+    var gstResolved = Items.resolveGstControl(line.gstRate);
+    if (gstResolved.mode === "other") {
+      $("itemEditGst").value = Items.GST_SELECT_OTHER;
+      $("itemEditGstOther").value = gstResolved.value;
+    } else {
+      $("itemEditGst").value = String(gstResolved.value);
+      $("itemEditGstOther").value = "";
+    }
+    syncItemEditorDiscVisibility();
+    syncItemEditorGstOtherVisibility();
+    updateItemEditorAmountPreview();
+  }
+
+  function openItemEditor(item) {
     if (DocumentEditor.isGenerated(state.document)) {
       return;
     }
-    var rows = document.querySelectorAll("#itemsBody tr");
-    if (!rows.length) {
-      appendEmptyItemRow();
-      return;
+    populateItemEditorSelects();
+    fillItemEditorForm(item);
+    var backdrop = $("itemEditorBackdrop");
+    backdrop.classList.add("open");
+    backdrop.setAttribute("aria-hidden", "false");
+    $("itemEditName").focus();
+  }
+
+  function closeItemEditor() {
+    itemEditorEditingId = null;
+    itemEditorItemRef = null;
+    var backdrop = $("itemEditorBackdrop");
+    backdrop.classList.remove("open");
+    backdrop.setAttribute("aria-hidden", "true");
+  }
+
+  function validateItemEditorLine(line) {
+    if (!line.name) {
+      setStatus("Item name is required.", "error");
+      return false;
     }
-    if (isRowComplete(rows[rows.length - 1])) {
-      appendEmptyItemRow();
+    if (!line.unit) {
+      setStatus("Unit is required.", "error");
+      return false;
     }
+    if (!isFinite(line.quantity) || line.quantity <= 0) {
+      setStatus("Quantity must be greater than zero.", "error");
+      return false;
+    }
+    if (line.rateMinor <= 0) {
+      setStatus("Rate must be greater than zero.", "error");
+      return false;
+    }
+    return true;
   }
 
   function sanitizeLineFromTable(line) {
@@ -473,251 +564,79 @@
     };
   }
 
-  function readItemsFromTable() {
-    var rows = Array.prototype.slice.call(document.querySelectorAll("#itemsBody tr"));
-    return rows.map(function (tr) {
-      var discountType = tr.querySelector(".item-disc-type").value;
-      var discountValue = Number(tr.querySelector(".item-disc-value").value) || 0;
-      return sanitizeLineFromTable({
-        id: tr.getAttribute("data-id"),
-        catalogueItemId: tr.getAttribute("data-catalogue-id") || null,
-        name: tr.querySelector(".item-name").value.trim(),
-        quantity: readOptionalNumber(tr.querySelector(".item-qty").value),
-        unit: Items.readUnitFromRow(tr),
-        rateInput: tr.querySelector(".item-rate").value.trim(),
-        rateMinor: Money.toPaise(tr.querySelector(".item-rate").value),
-        discountType: discountType,
-        discountValue: discountValue,
-        hsnSac: tr.querySelector(".item-hsn").value.trim(),
-        gstRate: Items.readGstFromRow(tr)
-      });
-    }).filter(function (line) {
-      return Validation.isMeaningfulLine(line);
-    });
-  }
-
-  function renderItemsTable(items) {
-    var body = $("itemsBody");
-    while (body.firstChild) {
-      body.removeChild(body.firstChild);
+  function saveItemFromEditor() {
+    if (!state.document || DocumentEditor.isGenerated(state.document)) {
+      return;
     }
-    items.forEach(function (item) {
-      body.appendChild(buildItemRow(item));
-    });
+    try {
+      var line = sanitizeLineFromTable(readLineFromItemEditor());
+      if (!validateItemEditorLine(line)) {
+        return;
+      }
+      if (!state.document.items) {
+        state.document.items = [];
+      }
+      var items = state.document.items;
+      var updated = false;
+      if (itemEditorEditingId) {
+        for (var i = 0; i < items.length; i += 1) {
+          if (items[i].id === itemEditorEditingId) {
+            line.id = itemEditorEditingId;
+            items[i] = line;
+            updated = true;
+            break;
+          }
+        }
+      }
+      if (!updated) {
+        items.push(line);
+      }
+      closeItemEditor();
+      state.dirty = true;
+      clearValidationFields();
+      renderItemsList(state.document.items);
+      refreshPreview();
+      setStatus(updated ? "Item updated." : "Item added.", "ok");
+    } catch (error) {
+      setStatus(error && error.message ? error.message : "Could not save item.", "error");
+    }
   }
 
-  function buildItemRow(item) {
+  function deleteItemById(itemId) {
+    state.document.items = (state.document.items || []).filter(function (row) {
+      return row.id !== itemId;
+    });
+    state.dirty = true;
+    renderItemsList(state.document.items);
+    refreshPreview();
+  }
+
+  function buildItemSummaryRow(item, amountMinor) {
     var tr = document.createElement("tr");
+    tr.className = "items-summary-row";
     tr.setAttribute("data-id", item.id);
-    if (item.catalogueItemId) {
-      tr.setAttribute("data-catalogue-id", item.catalogueItemId);
-    }
-    var displayEmpty = !!item.displayEmpty;
 
-    function cellInput(className, value, type, placeholder, textLimitKey) {
-      var td = document.createElement("td");
-      var input = document.createElement(type === "textarea" ? "textarea" : "input");
-      if (type !== "textarea") {
-        input.type = type || "text";
+    function td(text, className) {
+      var cell = document.createElement("td");
+      if (className) {
+        cell.className = className;
       }
-      input.className = className;
-      if (textLimitKey) {
-        input.setAttribute("data-text-limit", textLimitKey);
-      }
-      if (className === "item-rate") {
-        if (AppUI.bindNonNegativeDecimalInput) {
-          AppUI.bindNonNegativeDecimalInput(input, true);
-        }
-      }
-      if (className === "item-qty") {
-        input.min = "0";
-        if (AppUI.bindNonNegativeDecimalInput) {
-          AppUI.bindNonNegativeDecimalInput(input, true);
-        }
-      }
-      if (className === "item-gst") {
-        input.min = "0";
-        input.max = "100";
-        if (AppUI.bindNonNegativeDecimalInput) {
-          AppUI.bindNonNegativeDecimalInput(input, true);
-        }
-      }
-      if (displayEmpty) {
-        input.value = "";
-        if (placeholder != null) {
-          input.placeholder = placeholder;
-        }
-      } else {
-        input.value = value == null ? "" : value;
-      }
-      input.addEventListener("input", onEditorChange);
-      td.appendChild(input);
-      return td;
+      cell.textContent = text;
+      return cell;
     }
 
-    var nameTd = document.createElement("td");
-    nameTd.className = "item-name-cell";
-    var name = document.createElement("input");
-    name.type = "text";
-    name.className = "item-name";
-    name.setAttribute("data-text-limit", "lineItemName");
-    name.placeholder = "Name";
-    name.value = item.name || "";
-    name.addEventListener("input", onEditorChange);
-    nameTd.appendChild(name);
-    tr.appendChild(nameTd);
-
-    tr.appendChild(cellInput("item-qty", item.quantity, "text", "1", "lineItemQuantity"));
-
-    var unitTd = document.createElement("td");
-    unitTd.className = "item-unit-cell";
-    var unitResolved = Items.resolveUnitControl(displayEmpty ? "" : item.unit || "");
-    var unitSelect = document.createElement("select");
-    unitSelect.className = "item-unit";
-    if (unitResolved.mode === "empty") {
-      var unitPlaceholder = document.createElement("option");
-      unitPlaceholder.value = "";
-      unitPlaceholder.textContent = "Unit";
-      unitPlaceholder.disabled = true;
-      unitPlaceholder.selected = true;
-      unitSelect.appendChild(unitPlaceholder);
-    }
-    Items.PRESET_UNITS.forEach(function (label) {
-      var opt = document.createElement("option");
-      opt.value = label;
-      opt.textContent = label;
-      unitSelect.appendChild(opt);
-    });
-    var unitOtherOpt = document.createElement("option");
-    unitOtherOpt.value = Items.UNIT_SELECT_OTHER;
-    unitOtherOpt.textContent = "Other";
-    unitSelect.appendChild(unitOtherOpt);
-    var unitOther = document.createElement("input");
-    unitOther.type = "text";
-    unitOther.className = "item-unit-other item-unit-other--hidden";
-    unitOther.placeholder = "Unit";
-    unitOther.setAttribute("data-text-limit", "lineItemUnit");
-    if (unitResolved.mode === "preset") {
-      unitSelect.value = unitResolved.value;
-    } else if (unitResolved.mode === "other") {
-      unitSelect.value = Items.UNIT_SELECT_OTHER;
-      unitOther.value = unitResolved.value;
-      unitOther.classList.remove("item-unit-other--hidden");
-    }
-    function syncUnitOtherVisibility() {
-      var isOther = unitSelect.value === Items.UNIT_SELECT_OTHER;
-      unitOther.classList.toggle("item-unit-other--hidden", !isOther);
-    }
-    unitSelect.addEventListener("change", function () {
-      syncUnitOtherVisibility();
-      if (unitSelect.value === Items.UNIT_SELECT_OTHER) {
-        unitOther.focus();
-      }
-      onEditorChange();
-    });
-    unitOther.addEventListener("input", onEditorChange);
-    unitTd.appendChild(unitSelect);
-    unitTd.appendChild(unitOther);
-    tr.appendChild(unitTd);
-
-    tr.appendChild(cellInput(
-      "item-rate",
-      Money.fromPaise(item.rateMinor || 0).toFixed(2),
-      "text",
-      "0.00",
-      "lineItemRate"
-    ));
-
+    tr.appendChild(td(item.name || "", "item-name-cell"));
+    tr.appendChild(td(String(item.quantity)));
+    tr.appendChild(td(item.unit || ""));
+    tr.appendChild(td(Money.formatINR(item.rateMinor || 0)));
     var discTd = document.createElement("td");
-    var discType = document.createElement("select");
-    discType.className = "item-disc-type";
-    [["none", "None"], ["percent", "%"], ["fixed", "₹"]].forEach(function (pair) {
-      var opt = document.createElement("option");
-      opt.value = pair[0];
-      opt.textContent = pair[1];
-      discType.appendChild(opt);
-    });
-    discType.value = item.discountType || "none";
-    var discValue = document.createElement("input");
-    discValue.type = "number";
-    discValue.className = "item-disc-value";
-    if (displayEmpty) {
-      discValue.value = "";
-      discValue.placeholder = "0";
-    } else {
-      discValue.value = item.discountValue || 0;
-    }
-    discValue.addEventListener("input", onEditorChange);
-    if (AppUI.bindNonNegativeDecimalInput) {
-      AppUI.bindNonNegativeDecimalInput(discValue, true);
-    }
-    syncDiscountValueInputMax(discType.value, discValue);
-    discType.addEventListener("change", function () {
-      syncDiscountValueInputMax(discType.value, discValue);
-      onEditorChange();
-    });
-    discTd.className = "item-disc-cell";
-    discTd.appendChild(discType);
-    discTd.appendChild(discValue);
+    discTd.className = "items-summary-disc";
+    discTd.textContent = formatItemDiscountLabel(item.discountType, item.discountValue);
     tr.appendChild(discTd);
-
-    var gstTd = document.createElement("td");
-    gstTd.className = "item-gst-cell";
-    var gstResolved = displayEmpty
-      ? { mode: "empty", value: 0 }
-      : Items.resolveGstControl(item.gstRate);
-    var gstSelect = document.createElement("select");
-    gstSelect.className = "item-gst";
-    if (displayEmpty) {
-      var gstPlaceholder = document.createElement("option");
-      gstPlaceholder.value = "";
-      gstPlaceholder.textContent = "0";
-      gstPlaceholder.disabled = true;
-      gstPlaceholder.selected = true;
-      gstSelect.appendChild(gstPlaceholder);
-    }
-    Items.PRESET_GST_RATES.forEach(function (rate) {
-      var opt = document.createElement("option");
-      opt.value = String(rate);
-      opt.textContent = rate + "%";
-      gstSelect.appendChild(opt);
-    });
-    var gstOtherOpt = document.createElement("option");
-    gstOtherOpt.value = Items.GST_SELECT_OTHER;
-    gstOtherOpt.textContent = "Other";
-    gstSelect.appendChild(gstOtherOpt);
-    var gstOther = document.createElement("input");
-    gstOther.type = "number";
-    gstOther.className = "item-gst-other item-gst-other--hidden";
-    gstOther.min = "0";
-    gstOther.max = "100";
-    gstOther.step = "any";
-    gstOther.placeholder = "0";
-    if (gstResolved.mode === "preset") {
-      gstSelect.value = String(gstResolved.value);
-    } else if (gstResolved.mode === "other") {
-      gstSelect.value = Items.GST_SELECT_OTHER;
-      gstOther.value = gstResolved.value;
-      gstOther.classList.remove("item-gst-other--hidden");
-    }
-    function syncGstOtherVisibility() {
-      var isOther = gstSelect.value === Items.GST_SELECT_OTHER;
-      gstOther.classList.toggle("item-gst-other--hidden", !isOther);
-    }
-    gstSelect.addEventListener("change", function () {
-      syncGstOtherVisibility();
-      onEditorChange();
-    });
-    gstOther.addEventListener("input", onEditorChange);
-    gstTd.appendChild(gstSelect);
-    gstTd.appendChild(gstOther);
-    tr.appendChild(gstTd);
-
-    tr.appendChild(cellInput("item-hsn", item.hsnSac || "", "text", null, "hsnSac"));
-
+    tr.appendChild(td(String(item.gstRate) + "%"));
     var amountTd = document.createElement("td");
     amountTd.className = "item-amount";
-    amountTd.textContent = Money.formatINR(0);
+    amountTd.textContent = Money.formatINR(amountMinor || 0);
     tr.appendChild(amountTd);
 
     var actions = document.createElement("td");
@@ -726,27 +645,66 @@
     wrap.className = "row-actions";
     var remove = document.createElement("button");
     remove.type = "button";
-    remove.className = "btn ghost row-action-delete";
-    remove.setAttribute("aria-label", "Delete row");
-    remove.title = "Delete row";
+    remove.className = "btn ghost row-action-delete items-row-action";
+    remove.setAttribute("aria-label", "Delete item");
+    remove.title = "Delete";
     remove.innerHTML =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
-    remove.addEventListener("click", function () {
-      var bodyRows = document.querySelectorAll("#itemsBody tr");
-      if (bodyRows.length <= 1) {
-        setStatus("Keep at least one line item row.", "info");
-        return;
-      }
-      tr.remove();
-      onEditorChange();
+    remove.addEventListener("click", function (event) {
+      event.stopPropagation();
+      deleteItemById(item.id);
     });
     wrap.appendChild(remove);
     actions.appendChild(wrap);
     tr.appendChild(actions);
-    if (AppUI.bindTextLimits) {
-      AppUI.bindTextLimits(tr);
-    }
+
+    tr.addEventListener("click", function () {
+      if (DocumentEditor.isGenerated(state.document)) {
+        return;
+      }
+      openItemEditor(item);
+    });
+
     return tr;
+  }
+
+  function renderItemsList(items) {
+    var meaningful = (items || []).filter(Validation.isMeaningfulLine);
+    var emptyState = $("itemsEmptyState");
+    var listWrap = $("itemsListWrap");
+    var btnToolbarAdd = $("btnAddItem");
+    if (emptyState) {
+      emptyState.hidden = meaningful.length > 0;
+    }
+    if (listWrap) {
+      listWrap.hidden = meaningful.length === 0;
+    }
+    if (btnToolbarAdd) {
+      btnToolbarAdd.hidden = meaningful.length === 0;
+    }
+
+    var body = $("itemsBody");
+    if (!body) {
+      return;
+    }
+    while (body.firstChild) {
+      body.removeChild(body.firstChild);
+    }
+
+    var calc = Calculations.calculateDocument(
+      { items: meaningful, gst: state.document && state.document.gst },
+      state.settings
+    );
+    var amountById = {};
+    (calc.items || []).forEach(function (row) {
+      if (row.id) {
+        amountById[row.id] = row.lineTotalMinor;
+      }
+    });
+
+    meaningful.forEach(function (item) {
+      body.appendChild(buildItemSummaryRow(item, amountById[item.id]));
+    });
   }
 
   function onEditorChange() {
@@ -756,7 +714,6 @@
     state.dirty = true;
     clearValidationFields();
     syncCustomerSectionUi(false);
-    ensureTrailingEmptyRow();
     refreshPreview();
   }
 
@@ -1010,7 +967,77 @@
     }
   }
 
+  function bindItemEditor() {
+    populateItemEditorSelects();
+    var form = $("itemEditorForm");
+    if (AppUI.bindTextLimits && form) {
+      AppUI.bindTextLimits(form);
+    }
+    if (AppUI.bindNonNegativeDecimalInput) {
+      AppUI.bindNonNegativeDecimalInput($("itemEditQty"), true);
+      AppUI.bindNonNegativeDecimalInput($("itemEditRate"), true);
+      AppUI.bindNonNegativeDecimalInput($("itemEditDiscValue"), true);
+      AppUI.bindNonNegativeDecimalInput($("itemEditGstOther"), true);
+    }
+    [
+      "itemEditName", "itemEditQty", "itemEditRate",
+      "itemEditDiscValue", "itemEditGstOther"
+    ].forEach(function (id) {
+      var node = $(id);
+      if (node) {
+        node.addEventListener("input", updateItemEditorAmountPreview);
+      }
+    });
+    var discType = $("itemEditDiscType");
+    if (discType) {
+      discType.addEventListener("change", function () {
+        syncItemEditorDiscVisibility();
+        updateItemEditorAmountPreview();
+      });
+    }
+    var gstSel = $("itemEditGst");
+    if (gstSel) {
+      gstSel.addEventListener("change", function () {
+        syncItemEditorGstOtherVisibility();
+        updateItemEditorAmountPreview();
+      });
+    }
+    var cancelBtn = $("itemEditCancel");
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", closeItemEditor);
+    }
+    var saveBtn = $("itemEditSave");
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        saveItemFromEditor();
+      });
+    }
+    var addCenter = $("btnAddItemCenter");
+    if (addCenter) {
+      addCenter.addEventListener("click", function () {
+        openItemEditor(null);
+      });
+    }
+    var addToolbar = $("btnAddItem");
+    if (addToolbar) {
+      addToolbar.addEventListener("click", function () {
+        openItemEditor(null);
+      });
+    }
+    var backdrop = $("itemEditorBackdrop");
+    if (backdrop) {
+      backdrop.addEventListener("click", function (event) {
+        if (event.target === backdrop) {
+          closeItemEditor();
+        }
+      });
+    }
+  }
+
   function bindEvents() {
+    bindItemEditor();
     var customerSection = $("docCustomerSection");
     if (customerSection) {
       customerSection.addEventListener("toggle", function () {
@@ -1050,26 +1077,6 @@
       });
     });
 
-    $("btnAddItem").addEventListener("click", function () {
-      if (DocumentEditor.isGenerated(state.document)) {
-        return;
-      }
-      var itemRows = document.querySelectorAll("#itemsBody tr");
-      var lastRow = itemRows[itemRows.length - 1];
-      if (lastRow && isRowBlank(lastRow)) {
-        focusRowName(lastRow);
-        return;
-      }
-      if (lastRow && !isRowComplete(lastRow)) {
-        setStatus("Complete name, unit, qty, and rate on this row first.", "info");
-        return;
-      }
-      appendEmptyItemRow();
-      itemRows = document.querySelectorAll("#itemsBody tr");
-      focusRowName(itemRows[itemRows.length - 1]);
-      refreshPreview();
-    });
-
     $("btnPickCatalogue").addEventListener("click", async function () {
       if (DocumentEditor.isGenerated(state.document)) {
         return;
@@ -1087,11 +1094,7 @@
       if (!isFinite(index) || index < 0 || index >= state.catalogue.length) {
         return;
       }
-      syncFormToDocument();
-      state.document.items.push(Items.fromCatalogue(state.catalogue[index]));
-      renderItemsTable(state.document.items);
-      ensureTrailingEmptyRow();
-      refreshPreview();
+      openItemEditor(Items.fromCatalogue(state.catalogue[index]));
     });
 
     var btnSaveDraft = $("btnSaveDraft");
@@ -1163,7 +1166,6 @@
       initPreviewPanel();
       state.settings = await Settings.load();
       await loadLogo(state.settings);
-      state.catalogue = await Items.listCatalogue();
       var handedOff = await consumeSessionHandoff();
       if (!handedOff) {
         await startNewDocument("tax-invoice");
