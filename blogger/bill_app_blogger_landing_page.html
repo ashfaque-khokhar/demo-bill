@@ -1,0 +1,207 @@
+<!--
+BILL APP - BLOGGER LANDING PAGE
+Paste this entire snippet into Blogger > Pages > New Page > HTML view.
+Before publishing:
+1) Replace YOUR_APP_URL with your deployed billing app URL.
+2) Replace YOUR_SITE_URL with your custom domain + this page URL.
+3) Add the page Search Description in Blogger settings (instructions supplied separately).
+4) Update the privacy/data-handling wording after the app's actual storage behavior is finalized.
+-->
+
+<style>
+  :root{--ba-ink:#172033;--ba-muted:#5d687b;--ba-brand:#2563eb;--ba-brand-dark:#1d4ed8;--ba-soft:#eff6ff;--ba-line:#e5eaf2;--ba-bg:#f8fafc;--ba-green:#0f766e}
+  .billapp-page{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ba-ink);line-height:1.65;max-width:1120px;margin:0 auto;padding:0 18px 48px;overflow-x:clip}
+  .billapp-page *{box-sizing:border-box}
+  .ba-nav{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 0;border-bottom:1px solid var(--ba-line)}
+  .ba-nav-head{display:contents}
+  .ba-logo{font-size:1.35rem;font-weight:850;letter-spacing:-.04em;color:var(--ba-ink);text-decoration:none}
+  .ba-logo span{color:var(--ba-brand)}
+  .ba-menu-btn{display:none;flex-direction:column;justify-content:center;gap:5px;width:44px;height:44px;padding:10px;margin:0;border:1px solid var(--ba-line);border-radius:10px;background:#fff;cursor:pointer;flex-shrink:0}
+  .ba-menu-btn__bar{display:block;width:100%;height:2px;background:var(--ba-ink);border-radius:2px;transition:transform .2s,opacity .2s}
+  .ba-menu-btn.is-open .ba-menu-btn__bar:nth-child(1){transform:translateY(7px) rotate(45deg)}
+  .ba-menu-btn.is-open .ba-menu-btn__bar:nth-child(2){opacity:0}
+  .ba-menu-btn.is-open .ba-menu-btn__bar:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+  .ba-navlinks{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+  .ba-hero>div,.ba-card,.ba-step,.ba-preview{min-width:0}
+  .ba-navlinks a{color:var(--ba-muted);font-size:.94rem;text-decoration:none}
+  .ba-navlinks a:hover{color:var(--ba-brand)}
+  .ba-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--ba-brand);color:#fff!important;text-decoration:none;padding:12px 19px;border-radius:10px;font-weight:750;border:1px solid var(--ba-brand);transition:.18s}
+  .ba-btn:hover{background:var(--ba-brand-dark);transform:translateY(-1px)}
+  .ba-btn-outline{background:#fff;color:var(--ba-brand)!important}
+  .ba-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:36px;align-items:center;padding:66px 0 54px}
+  .ba-eyebrow{display:inline-block;background:var(--ba-soft);color:var(--ba-brand-dark);font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:999px}
+  .ba-hero h1{font-size:clamp(2.2rem,5vw,3.65rem);line-height:1.08;letter-spacing:-.055em;margin:18px 0}
+  .ba-hero p{font-size:1.1rem;color:var(--ba-muted);max-width:650px}
+  .ba-actions{display:flex;gap:12px;flex-wrap:wrap;margin:25px 0}
+  .ba-note{font-size:.86rem!important;color:var(--ba-muted);margin-top:12px}
+  .ba-preview{background:linear-gradient(145deg,#eff6ff,#f8fafc);border:1px solid #dbeafe;border-radius:22px;padding:22px;box-shadow:0 18px 55px rgba(30,64,175,.09)}
+  .ba-invoice{background:#fff;border:1px solid var(--ba-line);border-radius:13px;padding:20px;box-shadow:0 8px 28px rgba(15,23,42,.06)}
+  .ba-invoice-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--ba-line);padding-bottom:13px;margin-bottom:14px}
+  .ba-invoice-title{font-size:1.12rem;font-weight:850;letter-spacing:.04em}
+  .ba-small{font-size:.78rem;color:var(--ba-muted)}
+  .ba-invoice-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:.92rem}
+  .ba-total{border-top:1px solid var(--ba-line);margin-top:9px;padding-top:13px;font-weight:850;font-size:1.1rem}
+  .ba-total strong{color:var(--ba-green);font-size:1.35rem}
+  .ba-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:10px 0 54px}
+  .ba-trust div{background:var(--ba-bg);border:1px solid var(--ba-line);border-radius:12px;padding:15px;text-align:center;font-weight:750}
+  .ba-section{padding:48px 0;border-top:1px solid var(--ba-line)}
+  .ba-section h2{font-size:clamp(1.65rem,3vw,2.35rem);line-height:1.2;letter-spacing:-.035em;margin:0 0 12px}
+  .ba-lead{color:var(--ba-muted);max-width:760px;margin:0 0 25px}
+  .ba-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .ba-card{border:1px solid var(--ba-line);border-radius:15px;padding:20px;background:#fff}
+  .ba-card h3{margin:8px 0 7px;font-size:1.08rem}
+  .ba-card p{margin:0;color:var(--ba-muted);font-size:.94rem}
+  .ba-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:var(--ba-soft);color:var(--ba-brand);font-weight:900}
+  .ba-steps{counter-reset:step;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .ba-step{border:1px solid var(--ba-line);border-radius:15px;padding:20px}
+  .ba-step:before{counter-increment:step;content:"0" counter(step);display:inline-block;color:var(--ba-brand);font-weight:900;font-size:1.35rem;margin-bottom:8px}
+  .ba-step h3{margin:0 0 6px}
+  .ba-step p{margin:0;color:var(--ba-muted)}
+  .ba-callout{background:var(--ba-ink);color:#fff;border-radius:20px;padding:32px;display:flex;justify-content:space-between;align-items:center;gap:24px}
+  .ba-callout h2{color:#fff;margin:0 0 8px}
+  .ba-callout p{color:#cbd5e1;margin:0}
+  .ba-faq{border:1px solid var(--ba-line);border-radius:12px;margin:10px 0;overflow:hidden}
+  .ba-faq summary{cursor:pointer;padding:16px 18px;font-weight:750;list-style:none;position:relative;padding-right:45px}
+  .ba-faq summary::-webkit-details-marker{display:none}
+  .ba-faq summary:after{content:"+";position:absolute;right:18px;top:12px;font-size:1.4rem;color:var(--ba-brand)}
+  .ba-faq[open] summary:after{content:"−"}
+  .ba-faq p{padding:0 18px 16px;margin:0;color:var(--ba-muted)}
+  .ba-footer{border-top:1px solid var(--ba-line);padding-top:24px;margin-top:45px;color:var(--ba-muted);font-size:.9rem}
+  .ba-footer a{color:var(--ba-brand)}
+  @media(max-width:800px){.ba-hero{grid-template-columns:1fr;padding:45px 0}.ba-trust{grid-template-columns:repeat(2,1fr)}.ba-grid{grid-template-columns:repeat(2,1fr)}.ba-steps{grid-template-columns:1fr}.ba-callout{display:block}.ba-callout .ba-btn{margin-top:18px}}
+  @media(max-width:520px){.billapp-page{padding-left:14px;padding-right:14px}.ba-nav{align-items:flex-start}.ba-navlinks{gap:10px}.ba-navlinks a{font-size:.82rem}.ba-navlinks .ba-btn{padding:8px 10px}.ba-grid{grid-template-columns:1fr}.ba-trust div{font-size:.9rem;padding:12px}.ba-preview{padding:12px}.ba-invoice{padding:15px}}
+</style>
+
+<div class="billapp-page">
+  <header class="ba-nav">
+    <div class="ba-nav-head">
+      <a class="ba-logo" href="#top" aria-label="Bill APP home">Bill<span>APP</span></a>
+      <button type="button" class="ba-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="ba-nav-menu">
+        <span class="ba-menu-btn__bar" aria-hidden="true"></span>
+        <span class="ba-menu-btn__bar" aria-hidden="true"></span>
+        <span class="ba-menu-btn__bar" aria-hidden="true"></span>
+      </button>
+    </div>
+  <nav id="ba-nav-menu" class="ba-navlinks ba-nav-menu" aria-label="Main navigation">
+      <a href="#features">Features</a>
+      <a href="#how-it-works">How it works</a>
+      <a href="#faq">FAQs</a>
+      <a class="ba-btn" href="YOUR_APP_URL">Create Invoice</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="ba-hero">
+      <div>
+        <span class="ba-eyebrow">Online billing for Indian businesses</span>
+        <h1>GST Invoice Generator Online – Create Professional Bills &amp; PDFs</h1>
+        <p>Create professional invoices, GST bills and quotations with a simple online billing workflow. Calculate CGST, SGST or IGST, apply discounts, customize invoice numbers and prepare A4 or A5 PDFs.</p>
+        <div class="ba-actions">
+          <a class="ba-btn" href="YOUR_APP_URL">Start Creating an Invoice</a>
+          <a class="ba-btn ba-btn-outline" href="#features">Explore Features</a>
+        </div>
+        <p class="ba-note">Designed for freelancers, shop owners, service providers and small businesses in India.</p>
+      </div>
+      <div class="ba-preview" aria-label="Illustrative GST invoice preview">
+        <div class="ba-invoice">
+          <div class="ba-invoice-top">
+            <div><div class="ba-invoice-title">TAX INVOICE</div><div class="ba-small">Sample business name</div></div>
+            <div class="ba-small">Invoice # INV-001<br>17 Nov 2026</div>
+          </div>
+          <div class="ba-small">BILL TO</div>
+          <strong>Customer name</strong>
+          <div class="ba-invoice-row"><span>Product / Service</span><strong>₹1,000.00</strong></div>
+          <div class="ba-invoice-row"><span>Taxable amount</span><span>₹1,000.00</span></div>
+          <div class="ba-invoice-row"><span>CGST (9%)</span><span>₹90.00</span></div>
+          <div class="ba-invoice-row"><span>SGST (9%)</span><span>₹90.00</span></div>
+          <div class="ba-invoice-row ba-total"><span>Total</span><strong>₹1,180.00</strong></div>
+          <div class="ba-small" style="margin-top:12px">Illustrative preview only — not a valid tax invoice.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="ba-trust" aria-label="Key capabilities">
+      <div>GST calculations</div><div>Multiple bill types</div><div>A4 &amp; A5 layouts</div><div>PDF export</div>
+    </section>
+
+    <section class="ba-section" id="features">
+      <h2>Everything you need to prepare business invoices</h2>
+      <p class="ba-lead">Bill APP is being designed to make everyday billing easier. Prepare different business documents, calculate applicable GST and create a clean invoice layout without a complicated workflow.</p>
+      <div class="ba-grid">
+        <article class="ba-card"><div class="ba-icon">GST</div><h3>CGST, SGST and IGST</h3><p>Support GST calculations for intra-state and inter-state transactions based on the invoice details you enter.</p></article>
+        <article class="ba-card"><div class="ba-icon">PDF</div><h3>PDF invoice download</h3><p>Prepare a print-ready invoice PDF for sharing with customers or keeping with your business records.</p></article>
+        <article class="ba-card"><div class="ba-icon">№</div><h3>Custom invoice numbering</h3><p>Use an invoice numbering format that fits your business workflow.</p></article>
+        <article class="ba-card"><div class="ba-icon">%</div><h3>Flexible discounts</h3><p>Apply percentage-based or fixed-amount discounts where applicable.</p></article>
+        <article class="ba-card"><div class="ba-icon">A4</div><h3>A4 and A5 formats</h3><p>Choose a suitable page size for your invoice printing and document needs.</p></article>
+        <article class="ba-card"><div class="ba-icon">DOC</div><h3>Multiple document types</h3><p>Create the invoice or business document type supported by the application, such as invoices and quotations.</p></article>
+      </div>
+    </section>
+
+    <section class="ba-section" id="how-it-works">
+      <h2>How to create an invoice online</h2>
+      <p class="ba-lead">A straightforward process helps you prepare a bill with the information your customer needs.</p>
+      <div class="ba-steps">
+        <article class="ba-step"><h3>Enter business details</h3><p>Add your business information and the relevant customer details.</p></article>
+        <article class="ba-step"><h3>Add items and taxes</h3><p>Enter products or services, quantities, prices, discounts and applicable GST details.</p></article>
+        <article class="ba-step"><h3>Review and export</h3><p>Check the invoice totals and layout, then download the PDF when the app is available.</p></article>
+      </div>
+    </section>
+
+    <section class="ba-section">
+      <div class="ba-callout">
+        <div><h2>Make your billing workflow simpler</h2><p>Use Bill APP to prepare clear business invoices and downloadable PDF documents.</p></div>
+        <a class="ba-btn" href="YOUR_APP_URL">Open Bill APP</a>
+      </div>
+    </section>
+
+    <section class="ba-section" id="faq">
+      <h2>Frequently asked questions</h2>
+      <p class="ba-lead">Answers to common questions about online invoice creation and GST billing.</p>
+      <details class="ba-faq"><summary>What is an online GST invoice generator?</summary><p>An online GST invoice generator is a tool that helps a business prepare an invoice with seller and buyer details, item descriptions, taxable values and applicable GST calculations.</p></details>
+      <details class="ba-faq"><summary>Can I calculate CGST, SGST and IGST?</summary><p>Bill APP is planned to support CGST and SGST for eligible intra-state transactions and IGST for eligible inter-state transactions. Always verify the place of supply, tax rate and invoice details before issuing a tax invoice.</p></details>
+      <details class="ba-faq"><summary>Can I download an invoice as a PDF?</summary><p>PDF export is part of the Bill APP requirements. Once the application is deployed, users will be able to prepare a document and download its PDF.</p></details>
+      <details class="ba-faq"><summary>Can I create invoices with discounts?</summary><p>The planned billing workflow supports both fixed-amount and percentage-based discounts. The final invoice should clearly show how the discount is applied.</p></details>
+      <details class="ba-faq"><summary>Which invoice paper sizes are supported?</summary><p>The planned layouts include A4 and A5 page sizes. Check the exported document before printing to ensure it matches your business requirements.</p></details>
+      <details class="ba-faq"><summary>Does generating an invoice make it a government e-invoice?</summary><p>No. Creating or downloading a PDF invoice does not by itself register an e-invoice with the GST Invoice Registration Portal or generate an Invoice Reference Number (IRN). If e-invoicing applies to your business, complete the required process through an authorized system.</p></details>
+      <details class="ba-faq"><summary>Is every invoice generated with this tool automatically GST compliant?</summary><p>No software can guarantee compliance from incomplete or incorrect inputs. Businesses should verify GST registration details, invoice particulars, tax rates, place of supply and applicable legal requirements. Consult a qualified tax professional when needed.</p></details>
+    </section>
+  </main>
+
+  <footer class="ba-footer">
+    <strong>Bill APP</strong> — Online billing and invoice generation.
+    <p>This website provides information about billing features. It is not a government website, tax authority or substitute for professional tax advice.</p>
+    <p><a href="#top">Back to top</a></p>
+    <p>© <span id="ba-year">2026</span> Bill APP. All rights reserved.</p>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var year = document.getElementById("ba-year");
+    if (year) year.textContent = new Date().getFullYear();
+
+    // Smooth scrolling for this landing page's internal navigation.
+    document.querySelectorAll('.billapp-page a[href^="#"]').forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        var target = document.querySelector(link.getAttribute("href"));
+        if (target) {
+          event.preventDefault();
+          target.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
+  })();
+</script>
+
+<!-- Structured data: update the URL and brand details before publishing. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Bill APP",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": "An online billing and invoice generator planned to support GST calculations, multiple document types, discounts and PDF export.",
+  "url": "YOUR_SITE_URL"
+}
+</script>
