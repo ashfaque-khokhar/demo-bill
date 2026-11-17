@@ -40,7 +40,20 @@
     return type + "_" + num + "_" + date + ".pdf";
   }
 
-  async function exportPdf(doc, calc, business, logoDataUrl, paper) {
+  function downloadBlob(blob, filename) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () {
+      URL.revokeObjectURL(url);
+    }, 1000);
+  }
+
+  async function buildPdfBlob(doc, calc, business, logoDataUrl, paper) {
     if (!global.jspdf || !global.jspdf.jsPDF) {
       throw new Error("PDF library is not available.");
     }
@@ -223,11 +236,18 @@
       pdf.text(disc, margin, y);
     }
 
-    pdf.save(safeFilename(doc));
+    return pdf.output("blob");
+  }
+
+  async function exportPdf(doc, calc, business, logoDataUrl, paper) {
+    var blob = await buildPdfBlob(doc, calc, business, logoDataUrl, paper);
+    downloadBlob(blob, safeFilename(doc));
   }
 
   global.ExportPdf = {
+    buildPdfBlob: buildPdfBlob,
     exportPdf: exportPdf,
+    downloadBlob: downloadBlob,
     safeFilename: safeFilename
   };
 })(window);

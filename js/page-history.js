@@ -9,11 +9,14 @@
 
   var state = {
     settings: null,
-    logoUrl: "assets/logo-placeholder.svg"
+    logoUrl: "assets/logo-placeholder.svg",
+    logoDataUrl: null,
+    previewRow: null
   };
 
   async function loadLogo(settings) {
     state.logoUrl = "assets/logo-placeholder.svg";
+    state.logoDataUrl = null;
     if (!settings || !settings.logoAssetId) {
       return;
     }
@@ -25,6 +28,33 @@
       URL.revokeObjectURL(state.logoUrl);
     }
     state.logoUrl = URL.createObjectURL(asset.blob);
+    try {
+      state.logoDataUrl = await DocumentShare.blobToDataUrl(asset.blob);
+    } catch (e) {
+      state.logoDataUrl = null;
+    }
+  }
+
+  function syncPaperClass(paperEl) {
+    if (!paperEl) {
+      return;
+    }
+    var paperSize = String(DocumentOutput.paperSize(state.settings, null)).toLowerCase();
+    paperEl.className = "preview-paper " + paperSize;
+  }
+
+  function syncShareAvailability() {
+    var can = DocumentShare.canShareFiles();
+    var modalShare = $("btnHistoryShare");
+    if (modalShare) {
+      modalShare.hidden = !can;
+    }
+  }
+
+  function closeExportMenu(menu) {
+    if (menu) {
+      menu.open = false;
+    }
   }
 
   function closeHistoryPreview() {
@@ -35,6 +65,9 @@
     backdrop.classList.remove("open");
     backdrop.setAttribute("aria-hidden", "true");
     document.body.classList.remove("history-preview-open");
+    state.previewRow = null;
+    var menu = $("historyModalExportMenu");
+    closeExportMenu(menu);
   }
 
   function openHistoryPreview(row) {
@@ -45,22 +78,102 @@
     if (!backdrop || !paper || !target) {
       return;
     }
-    var business = row.businessSnapshot || state.settings;
-    var calc = Calculations.calculateDocument(row, state.settings);
+    state.previewRow = row;
+    syncPaperClass(paper);
     var displayNumber = DocumentEditor.displayDocumentNumber(row, state.settings);
-    var paperSize = String((state.settings && state.settings.paperSize) || "A4").toLowerCase();
-    paper.className = "preview-paper " + paperSize;
     if (title) {
       title.textContent = displayNumber + " · " + DocumentTypes.getById(row.documentType).title;
     }
-    Preview.render(target, row, calc, business, state.logoUrl, displayNumber);
+    DocumentOutput.renderDocumentPreview(target, row, state.settings, state.logoUrl);
     backdrop.classList.add("open");
     backdrop.setAttribute("aria-hidden", "false");
     document.body.classList.add("history-preview-open");
+    syncShareAvailability();
     var closeBtn = $("btnHistoryPreviewClose");
     if (closeBtn) {
       closeBtn.focus();
     }
+  }
+
+  async function runRowPng(row, previewEl) {
+    syncPaperClass($("historyExportPaper"));
+    await DocumentOutput.exportRowPng(row, state.settings, state.logoUrl, previewEl);
+    setStatus("PNG downloaded.", "ok");
+  }
+
+  async function runRowPdf(row, previewEl) {
+    syncPaperClass($("historyExportPaper"));
+    await DocumentOutput.exportRowPdf(row, state.settings, state.logoDataUrl, previewEl, state.logoUrl);
+    setStatus("PDF downloaded.", "ok");
+  }
+
+  async function runRowShare(row, previewEl) {
+    syncPaperClass($("historyExportPaper"));
+    var result = await DocumentOutput.shareRowPdf(row, state.settings, state.logoDataUrl, previewEl, state.logoUrl);
+    if (result === "shared") {
+      setStatus("PDF shared.", "ok");
+    } else if (result === "downloaded") {
+      setStatus("Share unavailable — PDF downloaded instead.", "info");
+    }
+  }
+
+  function runRowPrint(row, previewEl, paperId) {
+    if (previewEl.id === "historyExportPreview") {
+      syncPaperClass($("historyExportPaper"));
+      DocumentOutput.renderDocumentPreview(previewEl, row, state.settings, state.logoUrl);
+    }
+    Print.printInvoicePreview(paperId);
+    setStatus("Print dialog opened.", "info");
+  }
+
+  function createRowExportMenu(row) {
+    var details = document.createElement("details");
+    details.className = "editor-action-menu history-action-menu";
+    var summary = document.createElement("summary");
+    summary.className = "btn secondary";
+    summary.textContent = "Export";
+    details.appendChild(summary);
+
+    var panel = document.createElement("div");
+    panel.className = "editor-action-menu__panel";
+    panel.setAttribute("role", "menu");
+
+    var heading = document.createElement("p");
+    heading.className = "editor-action-menu__heading";
+    heading.textContent = "Download & print";
+    panel.appendChild(heading);
+
+    function addItem(label, handler) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "editor-action-menu__item";
+      btn.setAttribute("role", "menuitem");
+      btn.textContent = label;
+      btn.addEventListener("click", async function () {
+        closeExportMenu(details);
+        try {
+          await handler();
+        } catch (error) {
+          setStatus(error.message || "Export failed.", "error");
+        }
+      });
+      panel.appendChild(btn);
+      return btn;
+    }
+
+    var exportPreview = $("historyExportPreview");
+    addItem("PNG image", function () {
+      return runRowPng(row, exportPreview);
+    });
+    addItem("PDF file", function () {
+      return runRowPdf(row, exportPreview);
+    });
+    addItem("Print", function () {
+      runRowPrint(row, exportPreview, "historyExportPaper");
+    });
+
+    details.appendChild(panel);
+    return details;
   }
 
   function bindPreviewModal() {
@@ -81,6 +194,70 @@
     document.addEventListener("keydown", function (event) {
       if (event.key === "Escape" && backdrop.classList.contains("open")) {
         onDismiss();
+      }
+    });
+
+    var modalMenu = $("historyModalExportMenu");
+    var modalPreview = $("historyInvoicePreview");
+
+    $("btnHistoryModalPng").addEventListener("click", async function () {
+      closeExportMenu(modalMenu);
+      if (!state.previewRow) {
+        return;
+      }
+      try {
+        await DocumentOutput.exportRowPng(state.previewRow, state.settings, state.logoUrl, modalPreview);
+        setStatus("PNG downloaded.", "ok");
+      } catch (error) {
+        setStatus(error.message || "PNG export failed.", "error");
+      }
+    });
+    $("btnHistoryModalPdf").addEventListener("click", async function () {
+      closeExportMenu(modalMenu);
+      if (!state.previewRow) {
+        return;
+      }
+      try {
+        await DocumentOutput.exportRowPdf(
+          state.previewRow,
+          state.settings,
+          state.logoDataUrl,
+          modalPreview,
+          state.logoUrl
+        );
+        setStatus("PDF downloaded.", "ok");
+      } catch (error) {
+        setStatus(error.message || "PDF export failed.", "error");
+      }
+    });
+    $("btnHistoryModalPrint").addEventListener("click", function () {
+      closeExportMenu(modalMenu);
+      if (!state.previewRow) {
+        return;
+      }
+      Print.printInvoicePreview("historyPreviewPaper");
+      setStatus("Print dialog opened.", "info");
+    });
+
+    $("btnHistoryShare").addEventListener("click", async function () {
+      if (!state.previewRow) {
+        return;
+      }
+      try {
+        var result = await DocumentOutput.shareRowPdf(
+          state.previewRow,
+          state.settings,
+          state.logoDataUrl,
+          modalPreview,
+          state.logoUrl
+        );
+        if (result === "shared") {
+          setStatus("PDF shared.", "ok");
+        } else if (result === "downloaded") {
+          setStatus("Share unavailable — PDF downloaded instead.", "info");
+        }
+      } catch (error) {
+        setStatus(error.message || "Share failed.", "error");
       }
     });
   }
@@ -134,6 +311,9 @@
     while (list.firstChild) {
       list.removeChild(list.firstChild);
     }
+    var canShare = DocumentShare.canShareFiles();
+    var exportPreview = $("historyExportPreview");
+
     visible.forEach(function (row) {
       var item = document.createElement("div");
       item.className = "history-item";
@@ -167,6 +347,27 @@
       actions.appendChild(makeBtn("Open", function () {
         openHistoryPreview(row);
       }));
+      actions.appendChild(createRowExportMenu(row));
+      if (canShare) {
+        actions.appendChild(makeBtn("Share", async function () {
+          try {
+            var result = await DocumentOutput.shareRowPdf(
+              row,
+              state.settings,
+              state.logoDataUrl,
+              exportPreview,
+              state.logoUrl
+            );
+            if (result === "shared") {
+              setStatus("PDF shared.", "ok");
+            } else if (result === "downloaded") {
+              setStatus("Share unavailable — PDF downloaded instead.", "info");
+            }
+          } catch (error) {
+            setStatus(error.message || "Share failed.", "error");
+          }
+        }));
+      }
       actions.appendChild(makeBtn("Duplicate", function () {
         var draft = DocumentEditor.duplicateDocument(row, state.settings);
         sessionStorage.setItem(DRAFT_DOC_KEY, JSON.stringify(draft));
@@ -223,10 +424,12 @@
     try {
       bindEvents();
       bindPreviewModal();
+      syncPaperClass($("historyExportPaper"));
       state.settings = await Settings.load();
       await loadLogo(state.settings);
+      syncShareAvailability();
       await refreshHistory();
-      setStatus("All drafts and generated invoices — preview, duplicate, or delete.", "info");
+      setStatus("Preview, export, share, duplicate, or delete saved invoices.", "info");
     } catch (error) {
       setStatus(error.message || "Could not load history.", "error");
     }

@@ -71,6 +71,11 @@
       <p id="historySummary" class="history-summary hint" aria-live="polite"></p>
       <div id="historyList" class="history-list"></div>
     </div>
+    <div id="historyExportMount" class="visually-hidden" aria-hidden="true">
+      <div id="historyExportPaper" class="preview-paper a4">
+        <div id="historyExportPreview" class="invoice-preview"></div>
+      </div>
+    </div>
   </main>
 
   <div id="modalBackdrop" class="modal-backdrop no-print" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
@@ -92,7 +97,17 @@
           <div id="historyInvoicePreview" class="invoice-preview"></div>
         </div>
       </div>
-      <footer class="modal--preview__footer toolbar">
+      <footer class="modal--preview__footer toolbar modal--preview__footer--actions">
+        <details class="editor-action-menu" id="historyModalExportMenu">
+          <summary class="btn secondary">Export</summary>
+          <div class="editor-action-menu__panel" role="menu">
+            <p class="editor-action-menu__heading">Download &amp; print</p>
+            <button type="button" class="editor-action-menu__item" role="menuitem" id="btnHistoryModalPng">PNG image</button>
+            <button type="button" class="editor-action-menu__item" role="menuitem" id="btnHistoryModalPdf">PDF file</button>
+            <button type="button" class="editor-action-menu__item" role="menuitem" id="btnHistoryModalPrint">Print</button>
+          </div>
+        </details>
+        <button type="button" class="btn secondary" id="btnHistoryShare" hidden>Share PDF</button>
         <button type="button" class="btn secondary" id="btnHistoryPreviewDismiss">Close</button>
       </footer>
     </div>
@@ -109,6 +124,12 @@
   <script defer src="js/items.js"></script>
   <script defer src="js/customers.js"></script>
   <script defer src="js/preview.js"></script>
+  <script defer src="vendor/jspdf.umd.min.js"></script>
+  <script defer src="js/export-png.js"></script>
+  <script defer src="js/export-pdf.js"></script>
+  <script defer src="js/document-share.js"></script>
+  <script defer src="js/document-output.js"></script>
+  <script defer src="js/print.js"></script>
   <script defer src="js/document-editor.js"></script>
   <script defer src="js/theme.js"></script>
   <script defer src="js/ui-common.js"></script>

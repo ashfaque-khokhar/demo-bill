@@ -22,13 +22,50 @@
     display: none !important;
   }
 
-  body:not([data-page="editor"]) .page {
+  body:not([data-page="editor"]):not(.is-printing-invoice) .page {
     display: none !important;
   }
 
-  body[data-page="editor"] .page {
+  body[data-page="editor"] .page,
+  body.is-printing-invoice .page {
     display: block !important;
     padding: 0 !important;
+  }
+
+  body.is-printing-invoice .card h2,
+  body.is-printing-invoice .hint,
+  body.is-printing-invoice .history-filters,
+  body.is-printing-invoice .history-summary,
+  body.is-printing-invoice .history-list,
+  body.is-printing-invoice #historyExportMount {
+    display: none !important;
+  }
+
+  body.is-printing-invoice[data-page="history"] #historyPreviewBackdrop.open {
+    display: block !important;
+    position: static !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  body.is-printing-invoice[data-page="history"] .modal--preview__header,
+  body.is-printing-invoice[data-page="history"] .modal--preview__footer {
+    display: none !important;
+  }
+
+  body.is-printing-invoice[data-print-target="historyExportPaper"] #historyExportMount {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+  }
+
+  body.is-printing-invoice[data-print-target="historyExportPaper"] #historyPreviewBackdrop,
+  body.is-printing-invoice[data-print-target="historyExportPaper"] .card {
+    display: none !important;
   }
 
   .layout {

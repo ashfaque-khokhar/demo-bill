@@ -359,6 +359,16 @@
         exportMenu.open = false;
       }
     }
+    syncShareAvailability();
+  }
+
+  function syncShareAvailability() {
+    var shareBtn = $("btnSharePdf");
+    if (!shareBtn) {
+      return;
+    }
+    var generated = DocumentEditor.isGenerated(state.document);
+    shareBtn.hidden = !(generated && DocumentShare.canShareFiles());
   }
 
   function applyEditorMode() {
@@ -1139,6 +1149,29 @@
       refreshPreview();
       Print.printDocument();
       setStatus("Print dialog opened.", "info");
+    });
+    $("btnSharePdf").addEventListener("click", async function () {
+      closeExportMenu();
+      if (!runDocumentValidation()) {
+        return;
+      }
+      try {
+        refreshPreview();
+        var result = await DocumentOutput.shareRowPdf(
+          state.document,
+          state.settings,
+          state.logoDataUrl,
+          $("invoicePreview"),
+          state.logoUrl
+        );
+        if (result === "shared") {
+          setStatus("PDF shared.", "ok");
+        } else if (result === "downloaded") {
+          setStatus("Share unavailable — PDF downloaded instead.", "info");
+        }
+      } catch (error) {
+        setStatus(error.message || "Share failed.", "error");
+      }
     });
   }
 

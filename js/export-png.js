@@ -21,7 +21,7 @@
     }, 1000);
   }
 
-  async function exportPng(previewElement, doc) {
+  async function buildPngBlob(previewElement) {
     if (!previewElement) {
       throw new Error("Preview is not ready.");
     }
@@ -55,7 +55,7 @@
     var svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
     var url = URL.createObjectURL(svgBlob);
 
-    await new Promise(function (resolve, reject) {
+    return new Promise(function (resolve, reject) {
       var image = new Image();
       image.onload = function () {
         try {
@@ -66,8 +66,7 @@
               reject(new Error("PNG export failed."));
               return;
             }
-            downloadBlob(blob, safeFilename(doc));
-            resolve();
+            resolve(blob);
           }, "image/png");
         } catch (error) {
           URL.revokeObjectURL(url);
@@ -82,8 +81,15 @@
     });
   }
 
+  async function exportPng(previewElement, doc) {
+    var blob = await buildPngBlob(previewElement);
+    downloadBlob(blob, safeFilename(doc));
+  }
+
   global.ExportPng = {
+    buildPngBlob: buildPngBlob,
     exportPng: exportPng,
+    downloadBlob: downloadBlob,
     safeFilename: safeFilename
   };
 })(window);
