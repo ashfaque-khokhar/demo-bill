@@ -236,6 +236,24 @@
       pdf.text(disc, margin, y);
     }
 
+    if (!DocumentEditor.isGenerated(doc)) {
+      var pageTotal = pdf.getNumberOfPages();
+      var i;
+      for (i = 1; i <= pageTotal; i += 1) {
+        pdf.setPage(i);
+        pdf.saveGraphicsState();
+        pdf.setFont("NotoSans", "normal");
+        pdf.setTextColor(190, 190, 190);
+        pdf.setFontSize(56);
+        pdf.text("DRAFT", size.width / 2, size.height / 2, {
+          align: "center",
+          baseline: "middle",
+          angle: -30
+        });
+        pdf.restoreGraphicsState();
+      }
+    }
+
     return pdf.output("blob");
   }
 

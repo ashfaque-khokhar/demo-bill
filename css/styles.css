@@ -1343,8 +1343,25 @@ table.items td.item-row-actions {
 }
 
 .invoice-preview {
+  position: relative;
   color: #111;
   font-size: 12px;
+}
+
+.invoice-draft-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(3rem, 18vw, 6rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: rgba(0, 0, 0, 0.12);
+  transform: rotate(-30deg);
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
 }
 
 .invoice-preview .header {

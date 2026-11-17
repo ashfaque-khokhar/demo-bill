@@ -229,8 +229,42 @@
     }
   }
 
+  var DRAFT_WATERMARK_CLASS = "invoice-draft-watermark";
+
+  function removeDraftWatermark(target) {
+    if (!target) {
+      return;
+    }
+    var existing = target.querySelector("." + DRAFT_WATERMARK_CLASS);
+    if (existing) {
+      target.removeChild(existing);
+    }
+  }
+
+  function applyDraftWatermark(target) {
+    if (!target) {
+      return;
+    }
+    removeDraftWatermark(target);
+    var mark = el("div", DRAFT_WATERMARK_CLASS);
+    mark.setAttribute("aria-hidden", "true");
+    mark.appendChild(text("DRAFT"));
+    target.appendChild(mark);
+  }
+
+  function prepareForExport(target, doc) {
+    removeDraftWatermark(target);
+    if (!doc || DocumentEditor.isGenerated(doc)) {
+      return;
+    }
+    applyDraftWatermark(target);
+  }
+
   global.Preview = {
     render: render,
-    formatDate: formatDate
+    formatDate: formatDate,
+    removeDraftWatermark: removeDraftWatermark,
+    applyDraftWatermark: applyDraftWatermark,
+    prepareForExport: prepareForExport
   };
 })(window);

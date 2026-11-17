@@ -91,6 +91,10 @@
     color: #000;
   }
 
+  .invoice-draft-watermark {
+    color: rgba(0, 0, 0, 0.14);
+  }
+
   .invoice-preview th,
   .invoice-preview td {
     border-color: #000;

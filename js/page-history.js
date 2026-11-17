@@ -120,8 +120,8 @@
   function runRowPrint(row, previewEl, paperId) {
     if (previewEl.id === "historyExportPreview") {
       syncPaperClass($("historyExportPaper"));
-      DocumentOutput.renderDocumentPreview(previewEl, row, state.settings, state.logoUrl);
     }
+    DocumentOutput.prepareRowPrint(row, state.settings, state.logoUrl, previewEl);
     Print.printInvoicePreview(paperId);
     setStatus("Print dialog opened.", "info");
   }
@@ -235,6 +235,12 @@
       if (!state.previewRow) {
         return;
       }
+      DocumentOutput.prepareRowPrint(
+        state.previewRow,
+        state.settings,
+        state.logoUrl,
+        modalPreview
+      );
       Print.printInvoicePreview("historyPreviewPaper");
       setStatus("Print dialog opened.", "info");
     });
