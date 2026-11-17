@@ -262,6 +262,13 @@
       updateTextLimitCounter(input, counter, max);
     }
     input.addEventListener("input", refresh);
+    input.addEventListener("focus", function () {
+      counter.classList.remove("text-limit-counter--idle");
+    });
+    input.addEventListener("blur", function () {
+      counter.classList.add("text-limit-counter--idle");
+    });
+    counter.classList.add("text-limit-counter--idle");
     refresh();
   }
 

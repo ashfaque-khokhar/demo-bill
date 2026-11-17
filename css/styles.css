@@ -542,7 +542,7 @@ textarea:focus-visible {
 }
 
 .document-card__header {
-  padding: 14px 16px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--line);
   background: var(--elevated-5);
 }
@@ -550,13 +550,13 @@ textarea:focus-visible {
 .document-card__type-wrap {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .document-card__type-label {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -566,7 +566,7 @@ textarea:focus-visible {
 .document-type-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -574,10 +574,10 @@ textarea:focus-visible {
   flex: 0 0 auto;
   border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 7px 14px;
+  padding: 6px 12px;
   background: var(--surface);
   color: var(--text);
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.25;
   cursor: pointer;
@@ -629,6 +629,10 @@ textarea:focus-visible {
   flex-direction: column;
 }
 
+.document-card .editor-sections {
+  gap: 0;
+}
+
 .document-card details.settings-section {
   scroll-margin-top: 0;
   border-radius: 0;
@@ -641,8 +645,16 @@ textarea:focus-visible {
   border-top: 1px solid var(--line);
 }
 
+.document-card details.settings-section > .settings-section__summary {
+  padding: 11px 14px;
+}
+
 .document-card details.settings-section[open] > .settings-section__summary {
   background: var(--elevated-4);
+}
+
+.document-card .settings-section__body {
+  padding: 0 14px 12px;
 }
 
 .document-card .settings-section .grid-2 .field {
@@ -654,8 +666,7 @@ textarea:focus-visible {
 }
 
 .document-card__customer-summary {
-  min-height: 44px;
-  padding: 10px 14px;
+  min-height: 40px;
 }
 
 .document-card__customer-summary .settings-section__title {
@@ -682,13 +693,13 @@ textarea:focus-visible {
 }
 
 .document-card__customer-body {
-  padding: 10px 14px 12px;
+  padding-top: 0;
 }
 
 .document-card__customer-fields {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px 12px;
 }
 
 .document-card__customer-fields .field.full {
@@ -745,11 +756,15 @@ textarea:focus-visible {
 
 .text-limit-counter {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   color: var(--muted);
   line-height: 1.35;
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.text-limit-counter--idle {
+  display: none;
 }
 
 .text-limit-counter--full {
@@ -760,9 +775,8 @@ table.items .text-limit-counter {
   display: none;
 }
 
-
 .document-card__customer-fields .field--compact .text-limit-counter {
-  margin-top: -2px;
+  margin-top: 2px;
 }
 
 .field-error {
