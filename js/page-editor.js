@@ -19,6 +19,13 @@
   };
 
   function paperSize() {
+    var sel = $("paperSizeDoc");
+    if (sel && sel.value) {
+      return sel.value;
+    }
+    if (state.document && state.document.paperSize) {
+      return state.document.paperSize;
+    }
     return (state.settings && state.settings.paperSize) || "A4";
   }
 
@@ -139,11 +146,64 @@
       return;
     }
     var current = select.value;
-    document.querySelectorAll(".document-type-chip").forEach(function (btn) {
+    document.querySelectorAll("#documentTypeChips .document-type-chip").forEach(function (btn) {
       var on = btn.getAttribute("data-type-id") === current;
       btn.classList.toggle("document-type-chip--active", on);
       btn.setAttribute("aria-checked", on ? "true" : "false");
     });
+  }
+
+  function syncPaperSizeHint() {
+    var hint = $("paperSizeHint");
+    if (!hint) {
+      return;
+    }
+    hint.textContent = PaperSizes.getById(paperSize()).subtitle;
+  }
+
+  function syncPaperSizeChips() {
+    var select = $("paperSizeDoc");
+    if (!select) {
+      return;
+    }
+    var current = select.value;
+    document.querySelectorAll("#paperSizeChips .document-type-chip").forEach(function (btn) {
+      var on = btn.getAttribute("data-paper-id") === current;
+      btn.classList.toggle("document-type-chip--active", on);
+      btn.setAttribute("aria-checked", on ? "true" : "false");
+    });
+    syncPaperSizeHint();
+  }
+
+  function fillPaperSizes() {
+    var select = $("paperSizeDoc");
+    var chips = $("paperSizeChips");
+    if (!select || !chips) {
+      return;
+    }
+    PaperSizes.populateSelect(select, "A4");
+    while (chips.firstChild) {
+      chips.removeChild(chips.firstChild);
+    }
+    PaperSizes.getAll().forEach(function (size) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "document-type-chip";
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("data-paper-id", size.id);
+      btn.setAttribute("aria-checked", "false");
+      btn.textContent = size.title;
+      btn.addEventListener("click", function () {
+        if (DocumentEditor.isGenerated(state.document)) {
+          return;
+        }
+        select.value = size.id;
+        syncPaperSizeChips();
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      chips.appendChild(btn);
+    });
+    syncPaperSizeChips();
   }
 
   function fillDocumentTypes() {
@@ -304,7 +364,7 @@
     }
 
     [
-      "documentType", "customerName", "customerMobile",
+      "documentType", "paperSizeDoc", "customerName", "customerMobile",
       "customerAddress", "customerEmail", "customerGstin", "customerState",
       "customerStateCode", "gstEnabled", "supplyType", "notes"
     ].forEach(function (id) {
@@ -313,7 +373,7 @@
         node.disabled = disabled;
       }
     });
-    document.querySelectorAll(".document-type-chip").forEach(function (btn) {
+    document.querySelectorAll("#documentTypeChips .document-type-chip, #paperSizeChips .document-type-chip").forEach(function (btn) {
       btn.disabled = disabled;
     });
 
@@ -384,6 +444,12 @@
     }
     $("documentType").value = doc.documentType;
     syncDocumentTypeChips();
+    var paper = doc.paperSize || (state.settings && state.settings.paperSize) || "A4";
+    var paperSel = $("paperSizeDoc");
+    if (paperSel) {
+      paperSel.value = PaperSizes.getById(paper).id;
+    }
+    syncPaperSizeChips();
     Customers.writeToForm(doc.customer || Customers.emptyCustomer(), customerIds);
     $("gstEnabled").value = doc.gst && doc.gst.enabled ? "true" : "false";
     $("supplyType").value = (doc.gst && doc.gst.supplyType) || "auto";
@@ -862,9 +928,45 @@
     }
     addRow("Grand Total", Money.formatINR(calc.grandTotalMinor), "grand");
 
-    $("previewPaper").className = "preview-paper " + String(paperSize()).toLowerCase();
+    var pid = paperSize();
+    PaperSizes.applyToPaperEl($("previewPaper"), pid);
     var displayNumber = DocumentEditor.displayDocumentNumber(state.document, state.settings);
-    Preview.render($("invoicePreview"), state.document, calc, business, state.logoUrl, displayNumber);
+    Preview.render(
+      $("invoicePreview"),
+      state.document,
+      calc,
+      business,
+      state.logoUrl,
+      displayNumber,
+      PaperSizes.layoutScale(pid)
+    );
+    return calc;
+  }
+
+  function prepareEditorExportPreview() {
+    if (!DocumentEditor.isGenerated(state.document)) {
+      syncFormToDocument();
+    }
+    var business = state.document.businessSnapshot || state.settings;
+    var calc = Calculations.calculateDocument(state.document, state.settings);
+    var pid = paperSize();
+    var paper = $("editorExportPaper");
+    var target = $("editorExportPreview");
+    if (!paper || !target) {
+      return calc;
+    }
+    PaperSizes.applyToPaperEl(paper, pid);
+    var displayNumber = DocumentEditor.displayDocumentNumber(state.document, state.settings);
+    Preview.render(
+      target,
+      state.document,
+      calc,
+      business,
+      state.logoUrl,
+      displayNumber,
+      PaperSizes.layoutScale(pid)
+    );
+    Preview.prepareForExport(target, state.document);
     return calc;
   }
 
@@ -1065,13 +1167,16 @@
     }
 
     [
-      "documentType", "customerName", "customerMobile",
+      "documentType", "paperSizeDoc", "customerName", "customerMobile",
       "customerAddress", "customerEmail", "customerGstin", "customerState",
       "customerStateCode", "gstEnabled", "supplyType", "notes"
     ].forEach(function (id) {
       var node = $(id);
       node.addEventListener("input", onEditorChange);
       node.addEventListener("change", function () {
+        if (id === "paperSizeDoc") {
+          refreshPreview();
+        }
         if (id === "documentType") {
           if (isEditableDraft(state.document)) {
             state.document.documentType = $("documentType").value;
@@ -1120,8 +1225,8 @@
         return;
       }
       try {
-        refreshPreview();
-        await ExportPng.exportPng($("invoicePreview"), state.document);
+        prepareEditorExportPreview();
+        await ExportPng.exportPng($("editorExportPreview"), state.document, state.logoDataUrl, paperSize());
         setStatus("PNG downloaded.", "ok");
       } catch (error) {
         setStatus(error.message || "PNG export failed.", "error");
@@ -1146,8 +1251,8 @@
       if (!runDocumentValidation()) {
         return;
       }
-      refreshPreview();
-      Print.printDocument();
+      prepareEditorExportPreview();
+      Print.printInvoicePreview("editorExportPaper", paperSize());
       setStatus("Print dialog opened.", "info");
     });
     $("btnSharePdf").addEventListener("click", async function () {
@@ -1156,13 +1261,13 @@
         return;
       }
       try {
-        refreshPreview();
         var result = await DocumentOutput.shareRowPdf(
           state.document,
           state.settings,
           state.logoDataUrl,
-          $("invoicePreview"),
-          state.logoUrl
+          $("editorExportPreview"),
+          state.logoUrl,
+          $("editorExportPaper")
         );
         if (result === "shared") {
           setStatus("PDF shared.", "ok");
@@ -1178,6 +1283,7 @@
   async function init() {
     try {
       fillDocumentTypes();
+      fillPaperSizes();
       bindItemModalEvents();
       bindEvents();
       initPreviewPanel();

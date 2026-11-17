@@ -13,22 +13,16 @@
     return document.createTextNode(value == null ? "" : String(value));
   }
 
-  function formatDate(iso) {
-    if (!iso) {
-      return "";
-    }
-    var parts = String(iso).split("-");
-    if (parts.length !== 3) {
-      return iso;
-    }
-    return parts[2] + "-" + parts[1] + "-" + parts[0];
+  function formatDate(iso, timestampMs) {
+    return DateTimeFormat.formatDisplay(iso, timestampMs);
   }
 
-  function render(target, doc, calc, business, logoUrl, displayNumber) {
+  function render(target, doc, calc, business, logoUrl, displayNumber, layoutScale) {
     while (target.firstChild) {
       target.removeChild(target.firstChild);
     }
 
+    var scale = layoutScale > 0 ? layoutScale : 1;
     var type = DocumentTypes.getById(doc.documentType);
     var headings = (business && business.headings) || Settings.defaultSettings().headings;
     var showTax = !!(doc.gst && doc.gst.enabled);
@@ -39,8 +33,8 @@
       var img = el("img", "logo");
       img.src = logoUrl;
       img.alt = "Logo";
-      img.style.maxWidth = (business.logoWidth || 120) + "px";
-      img.style.maxHeight = (business.logoHeight || 48) + "px";
+      img.style.maxWidth = Math.round((business.logoWidth || 120) * scale) + "px";
+      img.style.maxHeight = Math.round((business.logoHeight || 48) * scale) + "px";
       if (business.logoAlignment === "center") {
         img.style.margin = "0 auto";
       } else if (business.logoAlignment === "right") {
@@ -75,7 +69,7 @@
       numberLabel = "Draft " + numberLabel.slice(1);
     }
     meta.appendChild(el("div")).appendChild(text("No: " + numberLabel));
-    meta.appendChild(el("div")).appendChild(text("Date: " + formatDate(doc.invoiceDate)));
+    meta.appendChild(el("div")).appendChild(text("Date: " + formatDate(doc.invoiceDate, doc.generatedAt || doc.updatedAt)));
     if (showTax && calc.supplyType && calc.supplyType !== "none") {
       meta.appendChild(el("div")).appendChild(text("Supply: " + calc.supplyType));
     }

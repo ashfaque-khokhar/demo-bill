@@ -35,12 +35,11 @@
     }
   }
 
-  function syncPaperClass(paperEl) {
+  function syncPaperClass(paperEl, row) {
     if (!paperEl) {
       return;
     }
-    var paperSize = String(DocumentOutput.paperSize(state.settings, null)).toLowerCase();
-    paperEl.className = "preview-paper " + paperSize;
+    PaperSizes.applyToPaperEl(paperEl, DocumentOutput.paperSize(state.settings, row || null));
   }
 
   function syncShareAvailability() {
@@ -79,12 +78,12 @@
       return;
     }
     state.previewRow = row;
-    syncPaperClass(paper);
+    syncPaperClass(paper, row);
     var displayNumber = DocumentEditor.displayDocumentNumber(row, state.settings);
     if (title) {
       title.textContent = displayNumber + " · " + DocumentTypes.getById(row.documentType).title;
     }
-    DocumentOutput.renderDocumentPreview(target, row, state.settings, state.logoUrl);
+    DocumentOutput.renderDocumentPreview(target, row, state.settings, state.logoUrl, paper);
     backdrop.classList.add("open");
     backdrop.setAttribute("aria-hidden", "false");
     document.body.classList.add("history-preview-open");
@@ -96,20 +95,38 @@
   }
 
   async function runRowPng(row, previewEl) {
-    syncPaperClass($("historyExportPaper"));
-    await DocumentOutput.exportRowPng(row, state.settings, state.logoUrl, previewEl);
+    await DocumentOutput.exportRowPng(
+      row,
+      state.settings,
+      state.logoUrl,
+      previewEl,
+      state.logoDataUrl,
+      $("historyExportPaper")
+    );
     setStatus("PNG downloaded.", "ok");
   }
 
   async function runRowPdf(row, previewEl) {
-    syncPaperClass($("historyExportPaper"));
-    await DocumentOutput.exportRowPdf(row, state.settings, state.logoDataUrl, previewEl, state.logoUrl);
+    await DocumentOutput.exportRowPdf(
+      row,
+      state.settings,
+      state.logoDataUrl,
+      previewEl,
+      state.logoUrl,
+      $("historyExportPaper")
+    );
     setStatus("PDF downloaded.", "ok");
   }
 
   async function runRowShare(row, previewEl) {
-    syncPaperClass($("historyExportPaper"));
-    var result = await DocumentOutput.shareRowPdf(row, state.settings, state.logoDataUrl, previewEl, state.logoUrl);
+    var result = await DocumentOutput.shareRowPdf(
+      row,
+      state.settings,
+      state.logoDataUrl,
+      previewEl,
+      state.logoUrl,
+      $("historyExportPaper")
+    );
     if (result === "shared") {
       setStatus("PDF shared.", "ok");
     } else if (result === "downloaded") {
@@ -117,12 +134,16 @@
     }
   }
 
-  function runRowPrint(row, previewEl, paperId) {
-    if (previewEl.id === "historyExportPreview") {
-      syncPaperClass($("historyExportPaper"));
+  function runRowPrint(row, previewEl, paperRootId) {
+    var pid = DocumentOutput.paperSize(state.settings, row);
+    var exportPaper = $("historyExportPaper");
+    if (previewEl.id === "historyExportPreview" && exportPaper) {
+      DocumentOutput.renderForExport(previewEl, row, state.settings, state.logoUrl, exportPaper);
+    } else {
+      DocumentOutput.prepareRowPrint(row, state.settings, state.logoUrl, previewEl);
+      syncPaperClass($(paperRootId), row);
     }
-    DocumentOutput.prepareRowPrint(row, state.settings, state.logoUrl, previewEl);
-    Print.printInvoicePreview(paperId);
+    Print.printInvoicePreview(paperRootId, pid);
     setStatus("Print dialog opened.", "info");
   }
 
@@ -206,7 +227,14 @@
         return;
       }
       try {
-        await DocumentOutput.exportRowPng(state.previewRow, state.settings, state.logoUrl, modalPreview);
+        await DocumentOutput.exportRowPng(
+          state.previewRow,
+          state.settings,
+          state.logoUrl,
+          $("historyExportPreview"),
+          state.logoDataUrl,
+          $("historyExportPaper")
+        );
         setStatus("PNG downloaded.", "ok");
       } catch (error) {
         setStatus(error.message || "PNG export failed.", "error");
@@ -222,8 +250,9 @@
           state.previewRow,
           state.settings,
           state.logoDataUrl,
-          modalPreview,
-          state.logoUrl
+          $("historyExportPreview"),
+          state.logoUrl,
+          $("historyExportPaper")
         );
         setStatus("PDF downloaded.", "ok");
       } catch (error) {
@@ -235,13 +264,18 @@
       if (!state.previewRow) {
         return;
       }
-      DocumentOutput.prepareRowPrint(
-        state.previewRow,
-        state.settings,
-        state.logoUrl,
-        modalPreview
-      );
-      Print.printInvoicePreview("historyPreviewPaper");
+      var row = state.previewRow;
+      var pid = DocumentOutput.paperSize(state.settings, row);
+      var exportPreview = $("historyExportPreview");
+      var exportPaper = $("historyExportPaper");
+      if (exportPreview && exportPaper) {
+        DocumentOutput.renderForExport(exportPreview, row, state.settings, state.logoUrl, exportPaper);
+        Print.printInvoicePreview("historyExportPaper", pid);
+      } else {
+        DocumentOutput.prepareRowPrint(row, state.settings, state.logoUrl, modalPreview);
+        syncPaperClass($("historyPreviewPaper"), row);
+        Print.printInvoicePreview("historyPreviewPaper", pid);
+      }
       setStatus("Print dialog opened.", "info");
     });
 
@@ -334,7 +368,7 @@
       strong.appendChild(statusChip);
       var span = document.createElement("span");
       span.textContent = ((row.customer && row.customer.name) || "No customer") +
-        " · " + Preview.formatDate(row.invoiceDate) +
+        " · " + Preview.formatDate(row.invoiceDate, row.generatedAt || row.updatedAt) +
         " · " + Money.formatINR(row.grandTotalMinor || 0);
       info.appendChild(strong);
       info.appendChild(span);
@@ -430,7 +464,7 @@
     try {
       bindEvents();
       bindPreviewModal();
-      syncPaperClass($("historyExportPaper"));
+      syncPaperClass($("historyExportPaper"), null);
       state.settings = await Settings.load();
       await loadLogo(state.settings);
       syncShareAvailability();

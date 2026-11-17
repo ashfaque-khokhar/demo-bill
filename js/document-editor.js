@@ -147,10 +147,16 @@
     return true;
   }
 
-  async function assignDraftDocumentNumber(working, settings) {
+  async function assignDraftDocumentNumber(working, settings, generatedAt) {
     var peek = Numbering.peekNumber(settings, working.documentType, working.invoiceDate);
     var sequenceValue = peek.sequenceValue;
-    var documentNumber = peek.documentNumber;
+    var documentNumber = Numbering.buildDocumentNumber(
+      settings,
+      working.documentType,
+      sequenceValue,
+      working.invoiceDate,
+      generatedAt
+    );
     var attempts = 0;
     while (attempts < 10000) {
       if (await isDocumentNumberAvailable(documentNumber, working.id)) {
@@ -166,7 +172,8 @@
         settings,
         working.documentType,
         sequenceValue,
-        working.invoiceDate
+        working.invoiceDate,
+        generatedAt
       );
       attempts += 1;
     }
@@ -228,15 +235,19 @@
       working.createdAt = Date.now();
     }
 
+    var generatedAt = Date.now();
+    working.generatedAt = generatedAt;
+
     if (!working.numberReserved) {
-      await assignDraftDocumentNumber(working, settings);
+      await assignDraftDocumentNumber(working, settings, generatedAt);
       var sequenceValue = working.numberingSnapshot.sequenceValue;
       Numbering.consumeSequenceValue(settings, working.documentType, working.invoiceDate, sequenceValue);
       working.documentNumber = Numbering.buildDocumentNumber(
         settings,
         working.documentType,
         sequenceValue,
-        working.invoiceDate
+        working.invoiceDate,
+        generatedAt
       );
       working.numberingSnapshot = {
         pattern: settings.numbering.pattern,
@@ -250,7 +261,6 @@
     await assertUniqueDocumentNumber(working);
 
     working.lifecycleStatus = "generated";
-    working.generatedAt = Date.now();
     working.businessSnapshot = Settings.snapshot(settings);
     working.updatedAt = Date.now();
     delete working.isNew;

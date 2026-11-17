@@ -16,6 +16,11 @@
     out = out.replace(/\{YY\}/g, tokens.yy || "");
     out = out.replace(/\{MM\}/g, tokens.mm || "");
     out = out.replace(/\{SEQ\}/g, tokens.seq || "");
+    out = out.replace(/\{DD\}/g, tokens.dd || "");
+    out = out.replace(/\{MMM\}/g, tokens.mmm || "");
+    out = out.replace(/\{HH\}/g, tokens.hh || "");
+    out = out.replace(/\{MI\}/g, tokens.mi || "");
+    out = out.replace(/\{AP\}/g, tokens.ap || "");
     return out;
   }
 
@@ -60,7 +65,7 @@
     return info.sequenceValue;
   }
 
-  function buildDocumentNumber(settings, documentTypeId, sequenceValue, dateStr) {
+  function buildDocumentNumber(settings, documentTypeId, sequenceValue, dateStr, timestampMs) {
     var type = DocumentTypes.getById(documentTypeId);
     var numbering = settings.numbering || {};
     var prefixMap = numbering.prefixByType || {};
@@ -70,19 +75,31 @@
     var yy = yyyy.slice(-2);
     var mm = pad(date.getMonth() + 1, 2);
     var seq = pad(sequenceValue, Number(numbering.sequencePadding) || 4);
+    var when = DateTimeFormat.tokens(dateStr, timestampMs || 0);
     return formatNumber(numbering.pattern, {
       prefix: prefix,
       yyyy: yyyy,
       yy: yy,
       mm: mm,
-      seq: seq
+      seq: seq,
+      dd: when.dd,
+      mmm: when.mmm,
+      hh: when.hh,
+      mi: when.mi,
+      ap: when.ap
     });
   }
 
-  function peekNumber(settings, documentTypeId, dateStr) {
+  function peekNumber(settings, documentTypeId, dateStr, timestampMs) {
     var info = nextSequence(settings, documentTypeId, dateStr);
     return {
-      documentNumber: buildDocumentNumber(settings, documentTypeId, info.sequenceValue, dateStr),
+      documentNumber: buildDocumentNumber(
+        settings,
+        documentTypeId,
+        info.sequenceValue,
+        dateStr,
+        timestampMs || 0
+      ),
       sequenceValue: info.sequenceValue
     };
   }

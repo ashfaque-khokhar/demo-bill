@@ -57,7 +57,7 @@
     $("logoWidth").value = s.logoWidth || 120;
     $("logoHeight").value = s.logoHeight || 48;
     $("logoAlignment").value = s.logoAlignment || "left";
-    $("numberPattern").value = s.numbering.pattern || "{PREFIX}/{YYYY}/{SEQ}";
+    $("numberPattern").value = s.numbering.pattern || "{PREFIX}/{DD}-{MMM}-{YYYY}_{HH}-{MI}-{AP}/{SEQ}";
     $("sequencePadding").value = s.numbering.sequencePadding || 4;
     $("sequenceStart").value = s.numbering.sequenceStart || 1;
     $("resetRule").value = s.numbering.resetRule || "never";
@@ -70,7 +70,7 @@
     $("hAmount").value = s.headings.amount;
     $("hSubtotal").value = s.headings.subtotal;
     $("hGrand").value = s.headings.grandTotal;
-    $("paperSize").value = s.paperSize || "A4";
+    PaperSizes.populateSelect($("paperSize"), s.paperSize || "A4");
   }
 
   function readSettingsForm() {
@@ -89,7 +89,7 @@
     s.logoWidth = Number($("logoWidth").value) || 120;
     s.logoHeight = Number($("logoHeight").value) || 48;
     s.logoAlignment = $("logoAlignment").value;
-    s.numbering.pattern = $("numberPattern").value.trim() || "{PREFIX}/{YYYY}/{SEQ}";
+    s.numbering.pattern = $("numberPattern").value.trim() || "{PREFIX}/{DD}-{MMM}-{YYYY}_{HH}-{MI}-{AP}/{SEQ}";
     s.numbering.sequencePadding = Number($("sequencePadding").value) || 4;
     s.numbering.sequenceStart = Number($("sequenceStart").value) || 1;
     s.numbering.resetRule = $("resetRule").value;

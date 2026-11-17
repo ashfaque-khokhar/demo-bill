@@ -23,7 +23,7 @@
       bankDetails: "",
       logoAssetId: null,
       numbering: {
-        pattern: "{PREFIX}/{YYYY}/{SEQ}",
+        pattern: "{PREFIX}/{DD}-{MMM}-{YYYY}_{HH}-{MI}-{AP}/{SEQ}",
         prefixByType: {
           bill: "BILL",
           "cash-memo": "CM",
@@ -43,7 +43,7 @@
       supplierStateCode: "",
       currencyCode: "INR",
       currencySymbol: "₹",
-      dateFormat: "DD-MM-YYYY",
+      dateFormat: "dd mmm yyyy @ hh:MM",
       paperSize: "A4",
       discount: defaultDiscountOptions(),
       headings: {

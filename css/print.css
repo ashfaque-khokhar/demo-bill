@@ -1,6 +1,7 @@
 @media print {
   @page {
     margin: 12mm;
+    size: auto;
   }
 
   body {
@@ -53,7 +54,8 @@
     display: none !important;
   }
 
-  body.is-printing-invoice[data-print-target="historyExportPaper"] #historyExportMount {
+  body.is-printing-invoice[data-print-target="historyExportPaper"] #historyExportMount,
+  body.is-printing-invoice[data-print-target="editorExportPaper"] #editorExportMount {
     display: block !important;
     position: static !important;
     width: auto !important;
@@ -64,7 +66,9 @@
   }
 
   body.is-printing-invoice[data-print-target="historyExportPaper"] #historyPreviewBackdrop,
-  body.is-printing-invoice[data-print-target="historyExportPaper"] .card {
+  body.is-printing-invoice[data-print-target="historyExportPaper"] .card,
+  body.is-printing-invoice[data-print-target="editorExportPaper"] #previewModalBackdrop,
+  body.is-printing-invoice[data-print-target="editorExportPaper"] .card {
     display: none !important;
   }
 
@@ -86,8 +90,8 @@
     padding: 0 !important;
   }
 
-  .invoice-preview {
-    font-size: 11pt;
+  .preview-paper .invoice-preview {
+    font-size: calc(11pt * var(--inv-scale, 1));
     color: #000;
   }
 

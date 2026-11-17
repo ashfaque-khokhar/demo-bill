@@ -17,27 +17,37 @@
     if (fontCache) {
       return fontCache;
     }
-    var response = await fetch("assets/fonts/NotoSans-Regular.ttf");
-    if (!response.ok) {
-      throw new Error("Could not load PDF font.");
+    try {
+      var response = await fetch("assets/fonts/NotoSans-Regular.ttf");
+      if (!response.ok) {
+        return null;
+      }
+      var buffer = await response.arrayBuffer();
+      fontCache = arrayBufferToBase64(buffer);
+      return fontCache;
+    } catch (e) {
+      return null;
     }
-    var buffer = await response.arrayBuffer();
-    fontCache = arrayBufferToBase64(buffer);
-    return fontCache;
+  }
+
+  async function applyPdfFont(pdf) {
+    var fontBase64 = await loadFont();
+    if (fontBase64) {
+      pdf.addFileToVFS("NotoSans-Regular.ttf", fontBase64);
+      pdf.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
+      pdf.setFont("NotoSans", "normal");
+      return "NotoSans";
+    }
+    pdf.setFont("helvetica", "normal");
+    return "helvetica";
   }
 
   function pageSize(paper) {
-    if (paper === "A5") {
-      return { format: "a5", width: 148, height: 210 };
-    }
-    return { format: "a4", width: 210, height: 297 };
+    return PaperSizes.pdfPageDimensions(paper || "A4");
   }
 
   function safeFilename(doc) {
-    var type = DocumentTypes.getById(doc.documentType).id;
-    var num = String(doc.documentNumber || "draft").replace(/[^\w\-]+/g, "_");
-    var date = String(doc.invoiceDate || "").replace(/[^\d\-]/g, "");
-    return type + "_" + num + "_" + date + ".pdf";
+    return ExportFilename.safe(doc, "pdf");
   }
 
   function downloadBlob(blob, filename) {
@@ -61,12 +71,14 @@
     var JsPDF = global.jspdf.jsPDF;
     var size = pageSize(paper || "A4");
     var pdf = new JsPDF({ unit: "mm", format: size.format, orientation: "portrait" });
-    var fontBase64 = await loadFont();
-    pdf.addFileToVFS("NotoSans-Regular.ttf", fontBase64);
-    pdf.addFont("NotoSans-Regular.ttf", "NotoSans", "normal");
-    pdf.setFont("NotoSans", "normal");
+    var pdfFont = await applyPdfFont(pdf);
 
-    var margin = 12;
+    var s = size.width / 210;
+    function pt(n) {
+      return n * s;
+    }
+
+    var margin = pt(12);
     var y = margin;
     var pageWidth = size.width;
     var contentWidth = pageWidth - margin * 2;
@@ -81,23 +93,23 @@
     }
 
     function line(text, x, sizePt, align) {
-      pdf.setFontSize(sizePt || 10);
+      pdf.setFontSize(pt(sizePt || 10));
       pdf.text(String(text || ""), x, y, { align: align || "left" });
     }
 
     if (logoDataUrl) {
       try {
         var fmt = logoDataUrl.indexOf("image/png") >= 0 ? "PNG" : "JPEG";
-        pdf.addImage(logoDataUrl, fmt, margin, y, 30, 12);
+        pdf.addImage(logoDataUrl, fmt, margin, y, pt(30), pt(12));
       } catch (e) {
         // Ignore logo failures and continue with text.
       }
     }
 
-    pdf.setFontSize(14);
-    pdf.text(business.businessName || "Your Business", margin + (logoDataUrl ? 34 : 0), y + 6);
-    y += 16;
-    pdf.setFontSize(9);
+    pdf.setFontSize(pt(14));
+    pdf.text(business.businessName || "Your Business", margin + (logoDataUrl ? pt(34) : 0), y + pt(6));
+    y += pt(16);
+    pdf.setFontSize(pt(9));
     var bizLines = [
       business.address || "",
       business.mobile ? ("Tel: " + business.mobile) : "",
@@ -106,24 +118,29 @@
       business.supplierState ? ("State: " + business.supplierState) : ""
     ].filter(Boolean);
     bizLines.forEach(function (row) {
-      ensureSpace(5);
+      ensureSpace(pt(5));
       pdf.text(row, margin, y);
-      y += 4.5;
+      y += pt(4.5);
     });
 
-    y += 2;
-    pdf.setFontSize(13);
-    pdf.text(type.title, pageWidth - margin, margin + 6, { align: "right" });
-    pdf.setFontSize(9);
-    pdf.text("No: " + (doc.documentNumber || "—"), pageWidth - margin, margin + 12, { align: "right" });
-    pdf.text("Date: " + Preview.formatDate(doc.invoiceDate), pageWidth - margin, margin + 17, { align: "right" });
+    y += pt(2);
+    pdf.setFontSize(pt(13));
+    pdf.text(type.title, pageWidth - margin, margin + pt(6), { align: "right" });
+    pdf.setFontSize(pt(9));
+    pdf.text("No: " + (doc.documentNumber || "—"), pageWidth - margin, margin + pt(12), { align: "right" });
+    pdf.text(
+      "Date: " + Preview.formatDate(doc.invoiceDate, doc.generatedAt || doc.updatedAt),
+      pageWidth - margin,
+      margin + pt(17),
+      { align: "right" }
+    );
 
-    y += 4;
-    ensureSpace(20);
-    pdf.setFontSize(10);
+    y += pt(4);
+    ensureSpace(pt(20));
+    pdf.setFontSize(pt(10));
     pdf.text("Bill To", margin, y);
-    y += 5;
-    pdf.setFontSize(9);
+    y += pt(5);
+    pdf.setFontSize(pt(9));
     var customerLines = [
       (doc.customer && doc.customer.name) || "",
       (doc.customer && doc.customer.mobile) || "",
@@ -132,13 +149,13 @@
       doc.customer && doc.customer.state ? ("Place of supply: " + doc.customer.state) : ""
     ].filter(Boolean);
     customerLines.forEach(function (row) {
-      ensureSpace(5);
+      ensureSpace(pt(5));
       pdf.text(row, margin, y);
-      y += 4.5;
+      y += pt(4.5);
     });
 
-    y += 4;
-    ensureSpace(12);
+    y += pt(4);
+    ensureSpace(pt(12));
     var colX = {
       item: margin,
       qty: margin + contentWidth * 0.46,
@@ -148,8 +165,8 @@
     };
 
     pdf.setFillColor(248, 250, 252);
-    pdf.rect(margin, y - 4, contentWidth, 7, "F");
-    pdf.setFontSize(8);
+    pdf.rect(margin, y - pt(4), contentWidth, pt(7), "F");
+    pdf.setFontSize(pt(8));
     pdf.text((business.headings && business.headings.item) || "Item", colX.item, y);
     pdf.text("Qty", colX.qty, y);
     pdf.text("Rate", colX.rate, y);
@@ -157,17 +174,17 @@
       pdf.text("GST%", colX.tax, y);
     }
     pdf.text("Amount", colX.amount, y, { align: "right" });
-    y += 6;
+    y += pt(6);
     pdf.setDrawColor(180);
     pdf.line(margin, y, pageWidth - margin, y);
-    y += 4;
+    y += pt(4);
 
     (calc.items || []).forEach(function (item, index) {
       var name = (index + 1) + ". " + (item.name || "Item");
       var wrapped = pdf.splitTextToSize(name, contentWidth * 0.44);
-      var rowHeight = Math.max(6, wrapped.length * 4.2);
-      ensureSpace(rowHeight + 2);
-      pdf.setFontSize(9);
+      var rowHeight = Math.max(pt(6), wrapped.length * pt(4.2));
+      ensureSpace(rowHeight + pt(2));
+      pdf.setFontSize(pt(9));
       pdf.text(wrapped, colX.item, y);
       pdf.text(String(item.quantity), colX.qty, y);
       pdf.text(Money.formatINR(item.rateMinor), colX.rate, y);
@@ -178,14 +195,14 @@
       y += rowHeight;
     });
 
-    y += 4;
-    ensureSpace(40);
+    y += pt(4);
+    ensureSpace(pt(40));
     function totalRow(label, value, bold) {
-      ensureSpace(6);
-      pdf.setFontSize(bold ? 11 : 9);
-      pdf.text(label, pageWidth - margin - 55, y);
+      ensureSpace(pt(6));
+      pdf.setFontSize(pt(bold ? 11 : 9));
+      pdf.text(label, pageWidth - margin - pt(55), y);
       pdf.text(value, pageWidth - margin, y, { align: "right" });
-      y += 5;
+      y += pt(5);
     }
 
     totalRow("Subtotal", Money.formatINR(calc.subtotalMinor));
@@ -206,33 +223,33 @@
     }
     totalRow("Grand Total", Money.formatINR(calc.grandTotalMinor), true);
 
-    y += 3;
-    ensureSpace(12);
-    pdf.setFontSize(9);
+    y += pt(3);
+    ensureSpace(pt(12));
+    pdf.setFontSize(pt(9));
     var words = pdf.splitTextToSize("Amount in words: " + calc.amountInWords, contentWidth);
     pdf.text(words, margin, y);
-    y += words.length * 4.5 + 4;
+    y += words.length * pt(4.5) + pt(4);
 
     if (business.upiId || business.bankDetails) {
-      ensureSpace(12);
+      ensureSpace(pt(12));
       if (business.upiId) {
         pdf.text("UPI: " + business.upiId, margin, y);
-        y += 4.5;
+        y += pt(4.5);
       }
       if (business.bankDetails) {
         pdf.text("Bank: " + business.bankDetails, margin, y);
-        y += 4.5;
+        y += pt(4.5);
       }
     }
 
     if (business.disclaimer) {
-      y += 2;
-      ensureSpace(16);
+      y += pt(2);
+      ensureSpace(pt(16));
       pdf.setDrawColor(180);
       pdf.line(margin, y, pageWidth - margin, y);
-      y += 5;
+      y += pt(5);
       var disc = pdf.splitTextToSize(business.disclaimer, contentWidth);
-      pdf.setFontSize(8);
+      pdf.setFontSize(pt(8));
       pdf.text(disc, margin, y);
     }
 
@@ -242,9 +259,9 @@
       for (i = 1; i <= pageTotal; i += 1) {
         pdf.setPage(i);
         pdf.saveGraphicsState();
-        pdf.setFont("NotoSans", "normal");
+        pdf.setFont(pdfFont, "normal");
         pdf.setTextColor(190, 190, 190);
-        pdf.setFontSize(56);
+        pdf.setFontSize(pt(56));
         pdf.text("DRAFT", size.width / 2, size.height / 2, {
           align: "center",
           baseline: "middle",

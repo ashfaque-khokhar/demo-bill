@@ -52,10 +52,18 @@
         <div class="editor-split">
         <div class="card document-card">
           <div class="document-card__header">
-            <div class="document-card__type-wrap">
-              <span class="document-card__type-label" id="documentTypeLabelText">Document type</span>
-              <div class="document-type-chips" id="documentTypeChips" role="radiogroup" aria-labelledby="documentTypeLabelText"></div>
-              <select id="documentType" class="document-card__type-select" hidden></select>
+            <div class="document-card__header-row">
+              <div class="document-card__type-wrap">
+                <span class="document-card__type-label" id="documentTypeLabelText">Document type</span>
+                <div class="document-type-chips" id="documentTypeChips" role="radiogroup" aria-labelledby="documentTypeLabelText"></div>
+                <select id="documentType" class="document-card__type-select" hidden></select>
+              </div>
+              <div class="document-card__paper-wrap">
+                <span class="document-card__type-label" id="paperSizeLabelText">Paper size</span>
+                <div class="document-type-chips" id="paperSizeChips" role="radiogroup" aria-labelledby="paperSizeLabelText"></div>
+                <p class="document-card__paper-hint" id="paperSizeHint" aria-live="polite"></p>
+                <select id="paperSizeDoc" class="document-card__type-select" hidden></select>
+              </div>
             </div>
           </div>
 
@@ -190,6 +198,12 @@
       </div>
     </div>
   </main>
+
+  <div id="editorExportMount" class="visually-hidden" aria-hidden="true">
+    <div id="editorExportPaper" class="preview-paper a4">
+      <div id="editorExportPreview" class="invoice-preview"></div>
+    </div>
+  </div>
 
   <datalist id="stateList">
     <option value="Andhra Pradesh"></option>
@@ -407,6 +421,8 @@
   <script defer src="js/validation.js"></script>
   <script defer src="js/calculations.js"></script>
   <script defer src="js/document-types.js"></script>
+  <script defer src="js/paper-sizes.js"></script>
+  <script defer src="js/datetime-format.js"></script>
   <script defer src="js/numbering.js"></script>
   <script defer src="js/db.js"></script>
   <script defer src="js/storage-repository.js"></script>
@@ -414,6 +430,7 @@
   <script defer src="js/items.js"></script>
   <script defer src="js/customers.js"></script>
   <script defer src="js/preview.js"></script>
+  <script defer src="js/export-filename.js"></script>
   <script defer src="js/export-png.js"></script>
   <script defer src="js/export-pdf.js"></script>
   <script defer src="js/document-share.js"></script>

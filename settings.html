@@ -79,10 +79,7 @@
             </div>
             <div class="field">
               <label for="paperSize">Paper size</label>
-              <select id="paperSize">
-                <option value="A4">A4</option>
-                <option value="A5">A5</option>
-              </select>
+              <select id="paperSize"></select>
             </div>
           </div>
         </details>
@@ -225,7 +222,7 @@
           <div class="grid-2">
             <div class="field">
               <label for="numberPattern">Pattern</label>
-              <input id="numberPattern" type="text" value="{PREFIX}/{YYYY}/{SEQ}" data-text-limit="numberPattern">
+              <input id="numberPattern" type="text" value="{PREFIX}/{DD}-{MMM}-{YYYY}_{HH}-{MI}-{AP}/{SEQ}" data-text-limit="numberPattern">
             </div>
             <div class="field">
               <label for="sequencePadding">Sequence padding</label>
@@ -283,7 +280,7 @@
         <li><strong>Tax &amp; GST</strong> — Used for GST invoices and place-of-supply rules.</li>
         <li><strong>Payment &amp; footer</strong> — Payment lines and terms printed at the bottom of invoices.</li>
         <li><strong>Logo &amp; branding</strong> — Appears in the invoice header when uploaded.</li>
-        <li><strong>Invoice numbering</strong> — How new invoice numbers are generated. Tokens: <code>{PREFIX}</code> <code>{YYYY}</code> <code>{YY}</code> <code>{MM}</code> <code>{SEQ}</code>. Separate sequence per document type.</li>
+        <li><strong>Invoice numbering</strong> — How new invoice numbers are generated. Tokens: <code>{PREFIX}</code> <code>{YYYY}</code> <code>{YY}</code> <code>{MM}</code> <code>{DD}</code> <code>{MMM}</code> <code>{HH}</code> <code>{MI}</code> <code>{AP}</code> <code>{SEQ}</code>. Separate sequence per document type. Time tokens use midnight on drafts and the generate time on finalized documents.</li>
         <li><strong>Table column labels</strong> — Custom wording for line items and totals on the invoice.</li>
       </ul>
     </footer>
@@ -326,6 +323,7 @@
   <script defer src="js/db.js"></script>
   <script defer src="js/storage-repository.js"></script>
   <script defer src="js/settings.js"></script>
+  <script defer src="js/paper-sizes.js"></script>
   <script defer src="js/items.js"></script>
   <script defer src="js/theme.js"></script>
   <script defer src="js/ui-common.js"></script>

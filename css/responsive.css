@@ -1,3 +1,16 @@
+@media (min-width: 720px) {
+  .document-card__header-row {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 20px;
+  }
+
+  .document-card__type-wrap,
+  .document-card__paper-wrap {
+    flex: 1 1 0;
+  }
+}
+
 @media (max-width: 960px) {
   .editor-split {
     grid-template-columns: 1fr;

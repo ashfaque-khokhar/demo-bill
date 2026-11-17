@@ -1,7 +1,7 @@
 /* global self, caches, fetch */
 "use strict";
 
-var CACHE_VERSION = "billing-pwa-v7";
+var CACHE_VERSION = "billing-pwa-v9";
 var PRECACHE_URLS = [
   "./",
   "./index.html",
@@ -24,6 +24,8 @@ var PRECACHE_URLS = [
   "./js/settings.js",
   "./js/items.js",
   "./js/customers.js",
+  "./js/datetime-format.js",
+  "./js/export-filename.js",
   "./js/preview.js",
   "./js/document-editor.js",
   "./js/document-types.js",
@@ -94,7 +96,11 @@ self.addEventListener("activate", function (event) {
 
 function isSameOriginRequest(request) {
   try {
-    return new URL(request.url).origin === self.location.origin;
+    var url = new URL(request.url);
+    if (url.protocol === "blob:" || url.protocol === "data:") {
+      return false;
+    }
+    return url.origin === self.location.origin;
   } catch (e) {
     return false;
   }
