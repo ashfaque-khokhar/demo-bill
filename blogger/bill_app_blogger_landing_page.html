@@ -1,16 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <!--
-BILL APP - BLOGGER LANDING PAGE
-Paste this entire snippet into Blogger > Pages > New Page > HTML view.
+BILL APP - LANDING PAGE
+Local preview: open this file in a browser.
+For Blogger > Pages > HTML view: paste from <style> through the JSON-LD script only (omit DOCTYPE, html, head, body tags and this comment block).
 Before publishing:
 1) Replace YOUR_APP_URL with your deployed billing app URL.
 2) Replace YOUR_SITE_URL with your custom domain + this page URL.
 3) Add the page Search Description in Blogger settings (instructions supplied separately).
 4) Update the privacy/data-handling wording after the app's actual storage behavior is finalized.
 -->
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bill APP — GST Invoice Generator Online</title>
+  <meta name="description" content="Create professional GST invoices, bills and PDFs online. CGST, SGST, IGST, discounts and custom invoice numbering for Indian businesses.">
 <style>
   :root{--ba-ink:#172033;--ba-muted:#5d687b;--ba-brand:#2563eb;--ba-brand-dark:#1d4ed8;--ba-soft:#eff6ff;--ba-line:#e5eaf2;--ba-bg:#f8fafc;--ba-green:#0f766e}
-  .billapp-page{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ba-ink);line-height:1.65;max-width:1120px;margin:0 auto;padding:0 18px 48px;overflow-x:clip}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{margin:0;background:#fff}
+  img,video,svg{max-width:100%;height:auto}
+  .billapp-page{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ba-ink);line-height:1.65;width:100%;max-width:1120px;margin:0 auto;padding:0 clamp(14px,4vw,24px) 48px;overflow-x:clip}
   .billapp-page *{box-sizing:border-box}
   .ba-nav{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 0;border-bottom:1px solid var(--ba-line)}
   .ba-nav-head{display:contents}
@@ -28,7 +38,7 @@ Before publishing:
   .ba-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--ba-brand);color:#fff!important;text-decoration:none;padding:12px 19px;border-radius:10px;font-weight:750;border:1px solid var(--ba-brand);transition:.18s}
   .ba-btn:hover{background:var(--ba-brand-dark);transform:translateY(-1px)}
   .ba-btn-outline{background:#fff;color:var(--ba-brand)!important}
-  .ba-hero{display:grid;grid-template-columns:1.15fr .85fr;gap:36px;align-items:center;padding:66px 0 54px}
+  .ba-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:clamp(24px,4vw,36px);align-items:center;padding:clamp(40px,8vw,66px) 0 clamp(40px,6vw,54px)}
   .ba-eyebrow{display:inline-block;background:var(--ba-soft);color:var(--ba-brand-dark);font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border-radius:999px}
   .ba-hero h1{font-size:clamp(2.2rem,5vw,3.65rem);line-height:1.08;letter-spacing:-.055em;margin:18px 0}
   .ba-hero p{font-size:1.1rem;color:var(--ba-muted);max-width:650px}
@@ -39,7 +49,8 @@ Before publishing:
   .ba-invoice-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;border-bottom:1px solid var(--ba-line);padding-bottom:13px;margin-bottom:14px}
   .ba-invoice-title{font-size:1.12rem;font-weight:850;letter-spacing:.04em}
   .ba-small{font-size:.78rem;color:var(--ba-muted)}
-  .ba-invoice-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:.92rem}
+  .ba-invoice-row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:7px 0;font-size:.92rem}
+  .ba-invoice-row span:first-child{flex:1 1 140px;min-width:0}
   .ba-total{border-top:1px solid var(--ba-line);margin-top:9px;padding-top:13px;font-weight:850;font-size:1.1rem}
   .ba-total strong{color:var(--ba-green);font-size:1.35rem}
   .ba-trust{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:10px 0 54px}
@@ -47,7 +58,7 @@ Before publishing:
   .ba-section{padding:48px 0;border-top:1px solid var(--ba-line)}
   .ba-section h2{font-size:clamp(1.65rem,3vw,2.35rem);line-height:1.2;letter-spacing:-.035em;margin:0 0 12px}
   .ba-lead{color:var(--ba-muted);max-width:760px;margin:0 0 25px}
-  .ba-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .ba-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px}
   .ba-card{border:1px solid var(--ba-line);border-radius:15px;padding:20px;background:#fff}
   .ba-card h3{margin:8px 0 7px;font-size:1.08rem}
   .ba-card p{margin:0;color:var(--ba-muted);font-size:.94rem}
@@ -68,10 +79,42 @@ Before publishing:
   .ba-faq p{padding:0 18px 16px;margin:0;color:var(--ba-muted)}
   .ba-footer{border-top:1px solid var(--ba-line);padding-top:24px;margin-top:45px;color:var(--ba-muted);font-size:.9rem}
   .ba-footer a{color:var(--ba-brand)}
-  @media(max-width:800px){.ba-hero{grid-template-columns:1fr;padding:45px 0}.ba-trust{grid-template-columns:repeat(2,1fr)}.ba-grid{grid-template-columns:repeat(2,1fr)}.ba-steps{grid-template-columns:1fr}.ba-callout{display:block}.ba-callout .ba-btn{margin-top:18px}}
-  @media(max-width:520px){.billapp-page{padding-left:14px;padding-right:14px}.ba-nav{align-items:flex-start}.ba-navlinks{gap:10px}.ba-navlinks a{font-size:.82rem}.ba-navlinks .ba-btn{padding:8px 10px}.ba-grid{grid-template-columns:1fr}.ba-trust div{font-size:.9rem;padding:12px}.ba-preview{padding:12px}.ba-invoice{padding:15px}}
+  @media(max-width:768px){
+    .ba-nav{flex-direction:column;align-items:stretch;gap:0}
+    .ba-nav-head{display:flex;align-items:center;justify-content:space-between;width:100%}
+    .ba-menu-btn{display:flex}
+    .ba-navlinks{display:none;flex-direction:column;align-items:stretch;gap:4px;width:100%;padding:12px 0 4px;border-top:1px solid var(--ba-line);margin-top:14px}
+    .ba-nav.ba-nav--open .ba-navlinks{display:flex}
+    .ba-navlinks a{font-size:.95rem;padding:12px 4px;min-height:44px;display:flex;align-items:center}
+    .ba-navlinks .ba-btn{width:100%;margin-top:8px;min-height:44px}
+    .ba-hero{grid-template-columns:1fr;padding:45px 0 40px}
+    .ba-hero p,.ba-lead{max-width:100%}
+    .ba-trust{grid-template-columns:repeat(2,1fr)}
+    .ba-steps{grid-template-columns:1fr}
+    .ba-callout{display:block}
+    .ba-callout .ba-btn{margin-top:18px;width:100%}
+  }
+  @media(max-width:480px){
+    .ba-section{padding:36px 0}
+    .ba-trust{grid-template-columns:1fr}
+    .ba-trust div{font-size:.9rem;padding:12px}
+    .ba-actions{flex-direction:column}
+    .ba-actions .ba-btn{width:100%}
+    .ba-callout{padding:24px 18px}
+    .ba-preview{padding:12px}
+    .ba-invoice{padding:15px}
+    .ba-invoice-top{flex-direction:column}
+  }
+  @media(max-width:400px){
+    .ba-hero h1{word-wrap:break-word;overflow-wrap:break-word}
+  }
+  @media(prefers-reduced-motion:reduce){
+    .ba-btn:hover{transform:none}
+    .ba-menu-btn__bar{transition:none}
+  }
 </style>
-
+</head>
+<body>
 <div class="billapp-page">
   <header class="ba-nav">
     <div class="ba-nav-head">
@@ -82,7 +125,7 @@ Before publishing:
         <span class="ba-menu-btn__bar" aria-hidden="true"></span>
       </button>
     </div>
-  <nav id="ba-nav-menu" class="ba-navlinks ba-nav-menu" aria-label="Main navigation">
+    <nav id="ba-nav-menu" class="ba-navlinks ba-nav-menu" aria-label="Main navigation">
       <a href="#features">Features</a>
       <a href="#how-it-works">How it works</a>
       <a href="#faq">FAQs</a>
@@ -180,13 +223,51 @@ Before publishing:
     var year = document.getElementById("ba-year");
     if (year) year.textContent = new Date().getFullYear();
 
-    // Smooth scrolling for this landing page's internal navigation.
+    var nav = document.querySelector(".billapp-page .ba-nav");
+    var menuBtn = document.querySelector(".billapp-page .ba-menu-btn");
+    var MOBILE_NAV_MAX = 768;
+
+    function closeNav() {
+      if (!nav || !menuBtn) return;
+      nav.classList.remove("ba-nav--open");
+      menuBtn.classList.remove("is-open");
+      menuBtn.setAttribute("aria-expanded", "false");
+      menuBtn.setAttribute("aria-label", "Open menu");
+    }
+
+    function openNav() {
+      if (!nav || !menuBtn) return;
+      nav.classList.add("ba-nav--open");
+      menuBtn.classList.add("is-open");
+      menuBtn.setAttribute("aria-expanded", "true");
+      menuBtn.setAttribute("aria-label", "Close menu");
+    }
+
+    function toggleNav() {
+      if (nav && nav.classList.contains("ba-nav--open")) closeNav();
+      else openNav();
+    }
+
+    if (menuBtn) {
+      menuBtn.addEventListener("click", toggleNav);
+    }
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") closeNav();
+    });
+
+    window.addEventListener("resize", function () {
+      if (window.innerWidth > MOBILE_NAV_MAX) closeNav();
+    });
+
     document.querySelectorAll('.billapp-page a[href^="#"]').forEach(function (link) {
       link.addEventListener("click", function (event) {
-        var target = document.querySelector(link.getAttribute("href"));
+        var href = link.getAttribute("href");
+        var target = href ? document.querySelector(href) : null;
         if (target) {
           event.preventDefault();
           target.scrollIntoView({ behavior: "smooth", block: "start" });
+          closeNav();
         }
       });
     });
@@ -205,3 +286,5 @@ Before publishing:
   "url": "YOUR_SITE_URL"
 }
 </script>
+</body>
+</html>
