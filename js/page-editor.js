@@ -9,21 +9,14 @@
 
   var OPEN_DOC_KEY = "billing.openDocId";
   var DRAFT_DOC_KEY = "billing.draftDocument";
-  var PREVIEW_PREF_KEY = "billing.editor.previewOpen";
-
-  var previewUserPreference = null;
-  var resizeTimer = null;
-
   var state = {
     settings: null,
     document: null,
     logoUrl: null,
     logoDataUrl: null,
+    catalogue: [],
     dirty: false
   };
-
-  var itemEditorEditingId = null;
-  var itemEditorItemRef = null;
 
   function paperSize() {
     return (state.settings && state.settings.paperSize) || "A4";
@@ -69,106 +62,125 @@
     state.logoDataUrl = await blobToDataUrl(asset.blob);
   }
 
-  function isWideViewport() {
-    return window.matchMedia("(min-width: 1101px)").matches;
-  }
-
-  function readStoredPreviewPreference() {
-    try {
-      var raw = localStorage.getItem(PREVIEW_PREF_KEY);
-      if (raw === "1") {
-        return true;
-      }
-      if (raw === "0") {
-        return false;
-      }
-    } catch (error) {
-      /* ignore */
-    }
-    return null;
-  }
-
-  function defaultPreviewOpen() {
-    return isWideViewport();
-  }
-
-  function resolvePreviewOpen() {
-    if (previewUserPreference !== null) {
-      return previewUserPreference;
-    }
-    return defaultPreviewOpen();
-  }
-
-  function applyPreviewVisibility(open) {
-    var layout = $("editorLayout");
+  function closeEditorPreviewModal() {
+    var backdrop = $("previewModalBackdrop");
     var toggle = $("btnPreviewToggle");
-    var closeBtn = $("btnPreviewClose");
-    if (!layout || !toggle) {
+    if (!backdrop) {
       return;
     }
-    layout.classList.toggle("preview-open", open);
-    toggle.setAttribute("aria-expanded", open ? "true" : "false");
-    toggle.textContent = open ? "Hide preview" : "Preview";
-    if (closeBtn) {
-      closeBtn.hidden = !open;
+    backdrop.classList.remove("open");
+    backdrop.setAttribute("aria-hidden", "true");
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", "false");
     }
   }
 
-  function setPreviewOpen(open, persist) {
-    applyPreviewVisibility(open);
-    if (persist) {
-      previewUserPreference = open;
-      try {
-        localStorage.setItem(PREVIEW_PREF_KEY, open ? "1" : "0");
-      } catch (error) {
-        /* ignore */
-      }
+  function openEditorPreviewModal() {
+    var backdrop = $("previewModalBackdrop");
+    var toggle = $("btnPreviewToggle");
+    if (!backdrop) {
+      return;
+    }
+    refreshPreview();
+    backdrop.classList.add("open");
+    backdrop.setAttribute("aria-hidden", "false");
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", "true");
+    }
+    var closeBtn = $("btnPreviewModalClose");
+    if (closeBtn) {
+      closeBtn.focus();
     }
   }
 
   function initPreviewPanel() {
-    previewUserPreference = readStoredPreviewPreference();
-    applyPreviewVisibility(resolvePreviewOpen());
-
     var toggle = $("btnPreviewToggle");
-    var closeBtn = $("btnPreviewClose");
-
     if (toggle) {
       toggle.addEventListener("click", function () {
-        var layout = $("editorLayout");
-        var open = layout && !layout.classList.contains("preview-open");
-        setPreviewOpen(open, true);
-      });
-    }
-    if (closeBtn) {
-      closeBtn.addEventListener("click", function () {
-        setPreviewOpen(false, true);
-      });
-    }
-
-    window.addEventListener("resize", function () {
-      if (resizeTimer) {
-        clearTimeout(resizeTimer);
-      }
-      resizeTimer = setTimeout(function () {
-        if (previewUserPreference === null) {
-          applyPreviewVisibility(defaultPreviewOpen());
+        var backdrop = $("previewModalBackdrop");
+        if (backdrop && backdrop.classList.contains("open")) {
+          closeEditorPreviewModal();
+        } else {
+          openEditorPreviewModal();
         }
-      }, 150);
+      });
+    }
+    var backdrop = $("previewModalBackdrop");
+    if (!backdrop) {
+      return;
+    }
+    function onDismiss() {
+      closeEditorPreviewModal();
+    }
+    if ($("btnPreviewModalClose")) {
+      $("btnPreviewModalClose").addEventListener("click", onDismiss);
+    }
+    if ($("btnPreviewModalDismiss")) {
+      $("btnPreviewModalDismiss").addEventListener("click", onDismiss);
+    }
+    backdrop.addEventListener("click", function (event) {
+      if (event.target === backdrop) {
+        onDismiss();
+      }
+    });
+  }
+
+  function formatDocumentTypeLabel(title) {
+    return String(title || "")
+      .toLowerCase()
+      .replace(/\b\w/g, function (ch) {
+        return ch.toUpperCase();
+      });
+  }
+
+  function syncDocumentTypeChips() {
+    var select = $("documentType");
+    if (!select) {
+      return;
+    }
+    var current = select.value;
+    document.querySelectorAll(".document-type-chip").forEach(function (btn) {
+      var on = btn.getAttribute("data-type-id") === current;
+      btn.classList.toggle("document-type-chip--active", on);
+      btn.setAttribute("aria-checked", on ? "true" : "false");
     });
   }
 
   function fillDocumentTypes() {
     var select = $("documentType");
+    var chips = $("documentTypeChips");
+    if (!select || !chips) {
+      return;
+    }
     while (select.firstChild) {
       select.removeChild(select.firstChild);
+    }
+    while (chips.firstChild) {
+      chips.removeChild(chips.firstChild);
     }
     DocumentTypes.getAll().forEach(function (type) {
       var opt = document.createElement("option");
       opt.value = type.id;
       opt.textContent = type.title;
       select.appendChild(opt);
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "document-type-chip";
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("data-type-id", type.id);
+      btn.setAttribute("aria-checked", "false");
+      btn.textContent = formatDocumentTypeLabel(type.title);
+      btn.addEventListener("click", function () {
+        if (DocumentEditor.isGenerated(state.document)) {
+          return;
+        }
+        select.value = type.id;
+        syncDocumentTypeChips();
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      chips.appendChild(btn);
     });
+    syncDocumentTypeChips();
   }
 
   function isEditableDraft(doc) {
@@ -198,9 +210,7 @@
     doc.gst.placeOfSupply = doc.customer.state || "";
     clearInvoiceDiscount(doc);
     doc.notes = $("notes").value;
-    if (!Array.isArray(doc.items)) {
-      doc.items = [];
-    }
+    doc.items = getItemsForDocument();
     return doc;
   }
 
@@ -303,21 +313,30 @@
         node.disabled = disabled;
       }
     });
+    document.querySelectorAll(".document-type-chip").forEach(function (btn) {
+      btn.disabled = disabled;
+    });
 
     var customerSection = $("docCustomerSection");
     if (customerSection && disabled) {
       customerSection.open = false;
     }
 
-    document.querySelectorAll("#itemsBody .row-actions button").forEach(function (node) {
-      node.hidden = disabled;
+    ["btnAddItem", "btnAddItemHeader", "btnItemModalSave", "btnItemModalCancel", "btnItemModalClose"].forEach(function (id) {
+      var ctrl = $(id);
+      if (ctrl) {
+        ctrl.disabled = disabled;
+      }
     });
-    var btnAddCenter = $("btnAddItemCenter");
-    if (btnAddCenter) {
-      btnAddCenter.disabled = disabled;
-    }
+    document.querySelectorAll("#itemsList .items-list__actions button").forEach(function (node) {
+      node.disabled = disabled;
+    });
+    document.querySelectorAll("#itemModalBackdrop input, #itemModalBackdrop select").forEach(function (node) {
+      node.disabled = disabled;
+    });
 
     var btnAdd = $("btnAddItem");
+    var btnAddHeader = $("btnAddItemHeader");
     var btnSaveDraft = $("btnSaveDraft");
     var btnGenerate = $("btnGenerate");
     var notice = $("editorReadonlyNotice");
@@ -354,12 +373,13 @@
       applyDraftInvoiceDate(doc);
     }
     $("documentType").value = doc.documentType;
+    syncDocumentTypeChips();
     Customers.writeToForm(doc.customer || Customers.emptyCustomer(), customerIds);
     $("gstEnabled").value = doc.gst && doc.gst.enabled ? "true" : "false";
     $("supplyType").value = (doc.gst && doc.gst.supplyType) || "auto";
     clearInvoiceDiscount(doc);
     $("notes").value = doc.notes || "";
-    renderItemsList(doc.items || []);
+    renderItemsList();
     syncDocumentCardUi();
     syncCustomerSectionUi(true);
     applyEditorMode();
@@ -375,179 +395,9 @@
     return isFinite(n) ? n : 0;
   }
 
-  function formatItemDiscountLabel(type, value) {
-    if (type === "percent") {
-      return value > 0 ? value + "%" : "—";
-    }
-    if (type === "fixed") {
-      return value > 0 ? Money.formatINR(Money.toPaise(value)) : "—";
-    }
-    return "—";
-  }
-
-  function readGstFromItemEditor() {
-    var sel = $("itemEditGst");
-    if (!sel) {
-      return 0;
-    }
-    if (sel.value === Items.GST_SELECT_OTHER) {
-      var other = $("itemEditGstOther");
-      var n = Number(other && other.value);
-      return isFinite(n) ? n : 0;
-    }
-    return Number(sel.value) || 0;
-  }
-
-  function readLineFromItemEditor() {
-    var nameEl = $("itemEditName");
-    var qtyEl = $("itemEditQty");
-    var unitEl = $("itemEditUnit");
-    var rateEl = $("itemEditRate");
-    var discTypeEl = $("itemEditDiscType");
-    var discValEl = $("itemEditDiscValue");
-    return {
-      id: itemEditorEditingId || Items.createId(),
-      catalogueItemId: itemEditorItemRef ? itemEditorItemRef.catalogueItemId || null : null,
-      name: nameEl ? String(nameEl.value || "").trim() : "",
-      quantity: readOptionalNumber(qtyEl ? qtyEl.value : ""),
-      unit: unitEl ? String(unitEl.value || "").trim() : "",
-      rateMinor: Money.toPaise(rateEl ? String(rateEl.value || "").trim() : ""),
-      discountType: discTypeEl ? discTypeEl.value : "none",
-      discountValue: Number(discValEl ? discValEl.value : 0) || 0,
-      hsnSac: itemEditorItemRef ? itemEditorItemRef.hsnSac || "" : "",
-      gstRate: readGstFromItemEditor()
-    };
-  }
-
-  function previewEditorLineAmount(line) {
-    var stub = {
-      gst: state.document && state.document.gst ? state.document.gst : { enabled: false },
-      items: [line]
-    };
-    var calc = Calculations.calculateDocument(stub, state.settings);
-    if (calc.items && calc.items[0]) {
-      return calc.items[0].lineTotalMinor;
-    }
-    return 0;
-  }
-
-  function updateItemEditorAmountPreview() {
-    var el = $("itemEditAmount");
-    if (!el) {
-      return;
-    }
-    var line = readLineFromItemEditor();
-    el.textContent = Money.formatINR(previewEditorLineAmount(line));
-  }
-
-  function syncItemEditorDiscVisibility() {
-    var type = $("itemEditDiscType").value;
-    syncDiscountValueInputMax(type, $("itemEditDiscValue"));
-    var field = $("itemEditDiscValueField");
-    if (field) {
-      field.hidden = type === "none";
-    }
-  }
-
-  function syncItemEditorGstOtherVisibility() {
-    var isOther = $("itemEditGst").value === Items.GST_SELECT_OTHER;
-    var field = $("itemEditGstOtherField");
-    if (field) {
-      field.hidden = !isOther;
-    }
-  }
-
-  function populateItemEditorSelects() {
-    var unitSel = $("itemEditUnit");
-    if (unitSel && !unitSel.options.length) {
-      Items.PRESET_UNITS.forEach(function (label) {
-        var opt = document.createElement("option");
-        opt.value = label;
-        opt.textContent = label;
-        unitSel.appendChild(opt);
-      });
-    }
-    var gstSel = $("itemEditGst");
-    if (gstSel && !gstSel.options.length) {
-      Items.PRESET_GST_RATES.forEach(function (rate) {
-        var opt = document.createElement("option");
-        opt.value = String(rate);
-        opt.textContent = rate + "%";
-        gstSel.appendChild(opt);
-      });
-      var other = document.createElement("option");
-      other.value = Items.GST_SELECT_OTHER;
-      other.textContent = "Other";
-      gstSel.appendChild(other);
-    }
-  }
-
-  function fillItemEditorForm(item) {
-    var line = item || Items.createLine({ quantity: 1 });
-    var inDocument = item && (state.document.items || []).some(function (row) {
-      return row.id === item.id;
-    });
-    itemEditorEditingId = inDocument ? item.id : null;
-    itemEditorItemRef = item ? Object.assign({}, item) : null;
-    $("itemEditorTitle").textContent = item ? "Edit item" : "Add item";
-    $("itemEditName").value = line.name || "";
-    $("itemEditQty").value = item ? String(line.quantity) : "1";
-    $("itemEditUnit").value = Items.resolveUnitControl(line.unit || "Piece").value || "Piece";
-    $("itemEditRate").value = item ? Money.fromPaise(line.rateMinor || 0).toFixed(2) : "";
-    $("itemEditDiscType").value = line.discountType || "none";
-    $("itemEditDiscValue").value = line.discountValue || "";
-    var gstResolved = Items.resolveGstControl(line.gstRate);
-    if (gstResolved.mode === "other") {
-      $("itemEditGst").value = Items.GST_SELECT_OTHER;
-      $("itemEditGstOther").value = gstResolved.value;
-    } else {
-      $("itemEditGst").value = String(gstResolved.value);
-      $("itemEditGstOther").value = "";
-    }
-    syncItemEditorDiscVisibility();
-    syncItemEditorGstOtherVisibility();
-    updateItemEditorAmountPreview();
-  }
-
-  function openItemEditor(item) {
-    if (DocumentEditor.isGenerated(state.document)) {
-      return;
-    }
-    populateItemEditorSelects();
-    fillItemEditorForm(item);
-    var backdrop = $("itemEditorBackdrop");
-    backdrop.classList.add("open");
-    backdrop.setAttribute("aria-hidden", "false");
-    $("itemEditName").focus();
-  }
-
-  function closeItemEditor() {
-    itemEditorEditingId = null;
-    itemEditorItemRef = null;
-    var backdrop = $("itemEditorBackdrop");
-    backdrop.classList.remove("open");
-    backdrop.setAttribute("aria-hidden", "true");
-  }
-
-  function validateItemEditorLine(line) {
-    if (!line.name) {
-      setStatus("Item name is required.", "error");
-      return false;
-    }
-    if (!line.unit) {
-      setStatus("Unit is required.", "error");
-      return false;
-    }
-    if (!isFinite(line.quantity) || line.quantity <= 0) {
-      setStatus("Quantity must be greater than zero.", "error");
-      return false;
-    }
-    if (line.rateMinor <= 0) {
-      setStatus("Rate must be greater than zero.", "error");
-      return false;
-    }
-    return true;
-  }
+  var itemModalEditId = null;
+  var itemModalHsnSac = "";
+  var itemModalCatalogueId = null;
 
   function sanitizeLineFromTable(line) {
     return {
@@ -564,147 +414,388 @@
     };
   }
 
-  function saveItemFromEditor() {
-    if (!state.document || DocumentEditor.isGenerated(state.document)) {
+  function getItemsForDocument() {
+    var items = state.document && Array.isArray(state.document.items) ? state.document.items : [];
+    return items.filter(function (line) {
+      return Validation.isMeaningfulLine(line);
+    }).map(sanitizeLineFromTable);
+  }
+
+  function formatItemDiscountLabel(line) {
+    if (!line || line.discountType === "none" || !(Number(line.discountValue) > 0)) {
+      return "No discount";
+    }
+    if (line.discountType === "percent") {
+      return line.discountValue + "% off";
+    }
+    return Money.formatINR(Money.toPaise(line.discountValue)) + " off";
+  }
+
+  function formatItemMeta(line) {
+    var qty = readOptionalNumber(line.quantity);
+    var parts = [
+      qty + " " + (line.unit || ""),
+      Money.formatINR(line.rateMinor || 0) + " / unit",
+      formatItemDiscountLabel(line),
+      "GST " + (Number(line.gstRate) || 0) + "%"
+    ];
+    return parts.join(" · ");
+  }
+
+  function updateItemsPanelVisibility() {
+    var items = state.document && state.document.items ? state.document.items : [];
+    var meaningful = items.filter(function (line) {
+      return Validation.isMeaningfulLine(line);
+    });
+    var empty = $("itemsEmpty");
+    var list = $("itemsList");
+    var meta = $("itemsCardMeta");
+    var headerAdd = $("btnAddItemHeader");
+    var hasItems = meaningful.length > 0;
+    var readonly = DocumentEditor.isGenerated(state.document);
+    if (empty) {
+      empty.hidden = hasItems;
+    }
+    if (list) {
+      list.hidden = !hasItems;
+    }
+    if (meta) {
+      meta.textContent = hasItems
+        ? meaningful.length + (meaningful.length === 1 ? " item" : " items")
+        : "Add products or services";
+    }
+    if (headerAdd) {
+      headerAdd.hidden = !hasItems || readonly;
+    }
+  }
+
+  function renderItemsList(calc) {
+    var list = $("itemsList");
+    if (!list) {
       return;
     }
-    try {
-      var line = sanitizeLineFromTable(readLineFromItemEditor());
-      if (!validateItemEditorLine(line)) {
-        return;
-      }
-      if (!state.document.items) {
-        state.document.items = [];
-      }
-      var items = state.document.items;
-      var updated = false;
-      if (itemEditorEditingId) {
-        for (var i = 0; i < items.length; i += 1) {
-          if (items[i].id === itemEditorEditingId) {
-            line.id = itemEditorEditingId;
-            items[i] = line;
-            updated = true;
-            break;
-          }
+    while (list.firstChild) {
+      list.removeChild(list.firstChild);
+    }
+    var items = state.document && state.document.items ? state.document.items : [];
+    var amounts = {};
+    if (calc && calc.items) {
+      calc.items.forEach(function (row) {
+        if (row.id) {
+          amounts[row.id] = row.lineTotalMinor;
         }
-      }
-      if (!updated) {
-        items.push(line);
-      }
-      closeItemEditor();
-      state.dirty = true;
-      clearValidationFields();
-      renderItemsList(state.document.items);
-      refreshPreview();
-      setStatus(updated ? "Item updated." : "Item added.", "ok");
-    } catch (error) {
-      setStatus(error && error.message ? error.message : "Could not save item.", "error");
+      });
     }
-  }
-
-  function deleteItemById(itemId) {
-    state.document.items = (state.document.items || []).filter(function (row) {
-      return row.id !== itemId;
-    });
-    state.dirty = true;
-    renderItemsList(state.document.items);
-    refreshPreview();
-  }
-
-  function buildItemSummaryRow(item, amountMinor) {
-    var tr = document.createElement("tr");
-    tr.className = "items-summary-row";
-    tr.setAttribute("data-id", item.id);
-
-    function td(text, className) {
-      var cell = document.createElement("td");
-      if (className) {
-        cell.className = className;
-      }
-      cell.textContent = text;
-      return cell;
-    }
-
-    tr.appendChild(td(item.name || "", "item-name-cell"));
-    tr.appendChild(td(String(item.quantity)));
-    tr.appendChild(td(item.unit || ""));
-    tr.appendChild(td(Money.formatINR(item.rateMinor || 0)));
-    var discTd = document.createElement("td");
-    discTd.className = "items-summary-disc";
-    discTd.textContent = formatItemDiscountLabel(item.discountType, item.discountValue);
-    tr.appendChild(discTd);
-    tr.appendChild(td(String(item.gstRate) + "%"));
-    var amountTd = document.createElement("td");
-    amountTd.className = "item-amount";
-    amountTd.textContent = Money.formatINR(amountMinor || 0);
-    tr.appendChild(amountTd);
-
-    var actions = document.createElement("td");
-    actions.className = "item-row-actions";
-    var wrap = document.createElement("div");
-    wrap.className = "row-actions";
-    var remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "btn ghost row-action-delete items-row-action";
-    remove.setAttribute("aria-label", "Delete item");
-    remove.title = "Delete";
-    remove.innerHTML =
-      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
-    remove.addEventListener("click", function (event) {
-      event.stopPropagation();
-      deleteItemById(item.id);
-    });
-    wrap.appendChild(remove);
-    actions.appendChild(wrap);
-    tr.appendChild(actions);
-
-    tr.addEventListener("click", function () {
-      if (DocumentEditor.isGenerated(state.document)) {
+    items.forEach(function (line) {
+      if (!Validation.isMeaningfulLine(line)) {
         return;
       }
-      openItemEditor(item);
+      var li = document.createElement("li");
+      li.className = "items-list__row";
+      li.setAttribute("data-id", line.id);
+      var main = document.createElement("div");
+      main.className = "items-list__main";
+      var name = document.createElement("p");
+      name.className = "items-list__name";
+      name.textContent = line.name || "Item";
+      var meta = document.createElement("p");
+      meta.className = "items-list__meta";
+      meta.textContent = formatItemMeta(line);
+      main.appendChild(name);
+      main.appendChild(meta);
+      var amount = document.createElement("span");
+      amount.className = "items-list__amount";
+      amount.textContent = Money.formatINR(amounts[line.id] != null ? amounts[line.id] : 0);
+      var actions = document.createElement("div");
+      actions.className = "items-list__actions";
+      var editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "btn ghost";
+      editBtn.setAttribute("aria-label", "Edit item");
+      editBtn.title = "Edit";
+      editBtn.textContent = "Edit";
+      editBtn.addEventListener("click", function () {
+        openItemModal(line);
+      });
+      var delBtn = document.createElement("button");
+      delBtn.type = "button";
+      delBtn.className = "btn ghost row-action-delete";
+      delBtn.setAttribute("aria-label", "Delete item");
+      delBtn.title = "Delete";
+      delBtn.textContent = "Delete";
+      delBtn.addEventListener("click", function () {
+        removeDocumentItem(line.id);
+      });
+      actions.appendChild(editBtn);
+      actions.appendChild(delBtn);
+      li.appendChild(main);
+      li.appendChild(amount);
+      li.appendChild(actions);
+      list.appendChild(li);
     });
-
-    return tr;
+    updateItemsPanelVisibility();
   }
 
-  function renderItemsList(items) {
-    var meaningful = (items || []).filter(Validation.isMeaningfulLine);
-    var emptyState = $("itemsEmptyState");
-    var listWrap = $("itemsListWrap");
-    var btnToolbarAdd = $("btnAddItem");
-    if (emptyState) {
-      emptyState.hidden = meaningful.length > 0;
+  function fillItemModalSelects() {
+    var unitSel = $("itemModalUnit");
+    var gstSel = $("itemModalGst");
+    if (unitSel && !unitSel.options.length) {
+      Items.PRESET_UNITS.forEach(function (label) {
+        var opt = document.createElement("option");
+        opt.value = label;
+        opt.textContent = label;
+        unitSel.appendChild(opt);
+      });
     }
-    if (listWrap) {
-      listWrap.hidden = meaningful.length === 0;
+    if (gstSel && !gstSel.options.length) {
+      Items.PRESET_GST_RATES.forEach(function (rate) {
+        var opt = document.createElement("option");
+        opt.value = String(rate);
+        opt.textContent = rate + "%";
+        gstSel.appendChild(opt);
+      });
+      var other = document.createElement("option");
+      other.value = Items.GST_SELECT_OTHER;
+      other.textContent = "Other";
+      gstSel.appendChild(other);
     }
-    if (btnToolbarAdd) {
-      btnToolbarAdd.hidden = meaningful.length === 0;
-    }
+  }
 
-    var body = $("itemsBody");
-    if (!body) {
+  function syncItemModalGstOtherVisibility() {
+    var gstSel = $("itemModalGst");
+    var wrap = document.querySelector(".item-modal-gst-other-wrap");
+    if (!gstSel || !wrap) {
       return;
     }
-    while (body.firstChild) {
-      body.removeChild(body.firstChild);
-    }
+    wrap.classList.toggle("item-modal-gst-other-wrap--hidden", gstSel.value !== Items.GST_SELECT_OTHER);
+  }
 
-    var calc = Calculations.calculateDocument(
-      { items: meaningful, gst: state.document && state.document.gst },
-      state.settings
-    );
-    var amountById = {};
-    (calc.items || []).forEach(function (row) {
-      if (row.id) {
-        amountById[row.id] = row.lineTotalMinor;
+  function syncItemModalDiscValueVisibility() {
+    var type = $("itemModalDiscType");
+    var wrap = document.querySelector(".item-modal-disc-value-wrap");
+    if (!type || !wrap) {
+      return;
+    }
+    wrap.classList.toggle("item-modal-disc-value-wrap--hidden", type.value === "none");
+  }
+
+  function readGstFromItemModal() {
+    var sel = $("itemModalGst");
+    if (!sel || !sel.value) {
+      return 0;
+    }
+    if (sel.value === Items.GST_SELECT_OTHER) {
+      var other = $("itemModalGstOther");
+      var n = Number(other && other.value);
+      return isFinite(n) ? n : 0;
+    }
+    return Number(sel.value) || 0;
+  }
+
+  function readItemDraftFromModal() {
+    return {
+      name: $("itemModalName").value.trim(),
+      quantity: readOptionalNumber($("itemModalQty").value),
+      unit: $("itemModalUnit").value,
+      rateMinor: Money.toPaise($("itemModalRate").value),
+      discountType: $("itemModalDiscType").value,
+      discountValue: Number($("itemModalDiscValue").value) || 0,
+      gstRate: readGstFromItemModal()
+    };
+  }
+
+  function updateItemModalAmount() {
+    var draft = readItemDraftFromModal();
+    var gross = Calculations.lineGrossMinor(draft);
+    var disc = Calculations.applyDiscount(gross, draft.discountType, draft.discountValue);
+    var after = Math.max(0, gross - disc);
+    var tax = 0;
+    if (state.document && state.document.gst && state.document.gst.enabled && draft.gstRate > 0) {
+      tax = Money.roundPaise((after * draft.gstRate) / 100);
+    }
+    $("itemModalAmount").textContent = Money.formatINR(after + tax);
+  }
+
+  function setItemModalGstValue(rate) {
+    var gstSel = $("itemModalGst");
+    var gstOther = $("itemModalGstOther");
+    if (!gstSel) {
+      return;
+    }
+    var resolved = Items.resolveGstControl(rate);
+    if (resolved.mode === "preset") {
+      gstSel.value = String(resolved.value);
+      if (gstOther) {
+        gstOther.value = "";
+      }
+    } else {
+      gstSel.value = Items.GST_SELECT_OTHER;
+      if (gstOther) {
+        gstOther.value = resolved.value;
+      }
+    }
+    syncItemModalGstOtherVisibility();
+  }
+
+  function openItemModal(item) {
+    if (DocumentEditor.isGenerated(state.document)) {
+      return;
+    }
+    fillItemModalSelects();
+    var isEdit = false;
+    if (item && item.id && state.document.items) {
+      isEdit = state.document.items.some(function (line) {
+        return line.id === item.id;
+      });
+    }
+    itemModalEditId = isEdit ? item.id : null;
+    itemModalHsnSac = item && item.hsnSac ? item.hsnSac : "";
+    itemModalCatalogueId = item && item.catalogueItemId ? item.catalogueItemId : null;
+    $("itemModalTitle").textContent = isEdit ? "Edit item" : "Add item";
+    $("itemModalName").value = item && item.name ? item.name : "";
+    $("itemModalQty").value = item && item.quantity ? String(item.quantity) : "";
+    $("itemModalUnit").value = Items.resolveUnitControl(item && item.unit ? item.unit : "Piece").value;
+    $("itemModalRate").value = item && item.rateMinor
+      ? Money.fromPaise(item.rateMinor).toFixed(2)
+      : "";
+    $("itemModalDiscType").value = (item && item.discountType) || "none";
+    $("itemModalDiscValue").value = item && item.discountValue ? item.discountValue : "";
+    syncDiscountValueInputMax($("itemModalDiscType").value, $("itemModalDiscValue"));
+    syncItemModalDiscValueVisibility();
+    setItemModalGstValue(item && isFinite(item.gstRate) ? item.gstRate : 0);
+    if (AppUI.bindTextLimits) {
+      AppUI.bindTextLimits($("itemModalBackdrop"));
+    }
+    updateItemModalAmount();
+    var backdrop = $("itemModalBackdrop");
+    backdrop.classList.add("open");
+    backdrop.setAttribute("aria-hidden", "false");
+    $("itemModalName").focus();
+  }
+
+  function closeItemModal() {
+    var backdrop = $("itemModalBackdrop");
+    backdrop.classList.remove("open");
+    backdrop.setAttribute("aria-hidden", "true");
+    itemModalEditId = null;
+    itemModalHsnSac = "";
+    itemModalCatalogueId = null;
+  }
+
+  function removeDocumentItem(id) {
+    if (DocumentEditor.isGenerated(state.document)) {
+      return;
+    }
+    if (!state.document.items) {
+      state.document.items = [];
+    }
+    state.document.items = state.document.items.filter(function (line) {
+      return line.id !== id;
+    });
+    onEditorChange();
+  }
+
+  function validateItemModalDraft(draft) {
+    if (!draft.name) {
+      setStatus("Enter item name.", "error");
+      $("itemModalName").focus();
+      return false;
+    }
+    if (!draft.unit) {
+      setStatus("Select unit.", "error");
+      return false;
+    }
+    if (!isFinite(draft.quantity) || draft.quantity <= 0) {
+      setStatus("Enter quantity greater than zero.", "error");
+      $("itemModalQty").focus();
+      return false;
+    }
+    if (!draft.rateMinor || draft.rateMinor <= 0) {
+      setStatus("Enter rate greater than zero.", "error");
+      $("itemModalRate").focus();
+      return false;
+    }
+    return true;
+  }
+
+  function saveItemFromModal() {
+    var draft = readItemDraftFromModal();
+    if (!validateItemModalDraft(draft)) {
+      return;
+    }
+    var line = sanitizeLineFromTable({
+      id: itemModalEditId || Items.createId(),
+      catalogueItemId: itemModalCatalogueId,
+      name: draft.name,
+      quantity: draft.quantity,
+      unit: draft.unit,
+      rateMinor: draft.rateMinor,
+      discountType: draft.discountType,
+      discountValue: draft.discountValue,
+      hsnSac: itemModalHsnSac,
+      gstRate: draft.gstRate
+    });
+    if (!state.document.items) {
+      state.document.items = [];
+    }
+    if (itemModalEditId) {
+      state.document.items = state.document.items.map(function (existing) {
+        return existing.id === itemModalEditId ? line : existing;
+      });
+    } else {
+      state.document.items.push(line);
+    }
+    closeItemModal();
+    onEditorChange();
+  }
+
+  function bindItemModalEvents() {
+    fillItemModalSelects();
+    ["itemModalName", "itemModalQty", "itemModalRate", "itemModalDiscValue", "itemModalGstOther"].forEach(function (id) {
+      var node = $(id);
+      if (node) {
+        node.addEventListener("input", updateItemModalAmount);
       }
     });
-
-    meaningful.forEach(function (item) {
-      body.appendChild(buildItemSummaryRow(item, amountById[item.id]));
+    ["itemModalUnit", "itemModalDiscType", "itemModalGst"].forEach(function (id) {
+      var node = $(id);
+      if (node) {
+        node.addEventListener("change", function () {
+          if (id === "itemModalDiscType") {
+            syncDiscountValueInputMax($("itemModalDiscType").value, $("itemModalDiscValue"));
+            syncItemModalDiscValueVisibility();
+          }
+          if (id === "itemModalGst") {
+            syncItemModalGstOtherVisibility();
+          }
+          updateItemModalAmount();
+        });
+      }
     });
+    var discValue = $("itemModalDiscValue");
+    if (discValue && AppUI.bindNonNegativeDecimalInput) {
+      AppUI.bindNonNegativeDecimalInput(discValue, true);
+    }
+    if ($("itemModalQty") && AppUI.bindNonNegativeDecimalInput) {
+      AppUI.bindNonNegativeDecimalInput($("itemModalQty"), true);
+    }
+    if ($("itemModalRate") && AppUI.bindNonNegativeDecimalInput) {
+      AppUI.bindNonNegativeDecimalInput($("itemModalRate"), true);
+    }
+    syncItemModalDiscValueVisibility();
+    syncItemModalGstOtherVisibility();
+    $("btnItemModalCancel").addEventListener("click", closeItemModal);
+    $("btnItemModalClose").addEventListener("click", closeItemModal);
+    $("btnItemModalSave").addEventListener("click", saveItemFromModal);
+    $("itemModalBackdrop").addEventListener("click", function (event) {
+      if (event.target === $("itemModalBackdrop")) {
+        closeItemModal();
+      }
+    });
+  }
+
+  function openAddItemModal() {
+    openItemModal(null);
   }
 
   function onEditorChange() {
@@ -726,19 +817,7 @@
     }
     var business = state.document.businessSnapshot || state.settings;
     var calc = Calculations.calculateDocument(state.document, state.settings);
-    document.querySelectorAll("#itemsBody .item-amount").forEach(function (cell) {
-      cell.textContent = Money.formatINR(0);
-    });
-    calc.items.forEach(function (item) {
-      if (!item.id) {
-        return;
-      }
-      var row = document.querySelector('#itemsBody tr[data-id="' + item.id + '"]');
-      var amountCell = row && row.querySelector(".item-amount");
-      if (amountCell) {
-        amountCell.textContent = Money.formatINR(item.lineTotalMinor);
-      }
-    });
+    renderItemsList(calc);
 
     var totals = $("totalsBox");
     while (totals.firstChild) {
@@ -967,77 +1046,7 @@
     }
   }
 
-  function bindItemEditor() {
-    populateItemEditorSelects();
-    var form = $("itemEditorForm");
-    if (AppUI.bindTextLimits && form) {
-      AppUI.bindTextLimits(form);
-    }
-    if (AppUI.bindNonNegativeDecimalInput) {
-      AppUI.bindNonNegativeDecimalInput($("itemEditQty"), true);
-      AppUI.bindNonNegativeDecimalInput($("itemEditRate"), true);
-      AppUI.bindNonNegativeDecimalInput($("itemEditDiscValue"), true);
-      AppUI.bindNonNegativeDecimalInput($("itemEditGstOther"), true);
-    }
-    [
-      "itemEditName", "itemEditQty", "itemEditRate",
-      "itemEditDiscValue", "itemEditGstOther"
-    ].forEach(function (id) {
-      var node = $(id);
-      if (node) {
-        node.addEventListener("input", updateItemEditorAmountPreview);
-      }
-    });
-    var discType = $("itemEditDiscType");
-    if (discType) {
-      discType.addEventListener("change", function () {
-        syncItemEditorDiscVisibility();
-        updateItemEditorAmountPreview();
-      });
-    }
-    var gstSel = $("itemEditGst");
-    if (gstSel) {
-      gstSel.addEventListener("change", function () {
-        syncItemEditorGstOtherVisibility();
-        updateItemEditorAmountPreview();
-      });
-    }
-    var cancelBtn = $("itemEditCancel");
-    if (cancelBtn) {
-      cancelBtn.addEventListener("click", closeItemEditor);
-    }
-    var saveBtn = $("itemEditSave");
-    if (saveBtn) {
-      saveBtn.addEventListener("click", function (event) {
-        event.preventDefault();
-        event.stopPropagation();
-        saveItemFromEditor();
-      });
-    }
-    var addCenter = $("btnAddItemCenter");
-    if (addCenter) {
-      addCenter.addEventListener("click", function () {
-        openItemEditor(null);
-      });
-    }
-    var addToolbar = $("btnAddItem");
-    if (addToolbar) {
-      addToolbar.addEventListener("click", function () {
-        openItemEditor(null);
-      });
-    }
-    var backdrop = $("itemEditorBackdrop");
-    if (backdrop) {
-      backdrop.addEventListener("click", function (event) {
-        if (event.target === backdrop) {
-          closeItemEditor();
-        }
-      });
-    }
-  }
-
   function bindEvents() {
-    bindItemEditor();
     var customerSection = $("docCustomerSection");
     if (customerSection) {
       customerSection.addEventListener("toggle", function () {
@@ -1077,25 +1086,11 @@
       });
     });
 
-    $("btnPickCatalogue").addEventListener("click", async function () {
-      if (DocumentEditor.isGenerated(state.document)) {
-        return;
-      }
-      state.catalogue = await Items.listCatalogue();
-      if (!state.catalogue.length) {
-        setStatus("Catalogue is empty. Save an item first.", "info");
-        return;
-      }
-      var labels = state.catalogue.map(function (entry, index) {
-        return (index + 1) + ". " + entry.name + " (" + Money.formatINR(entry.defaultRateMinor || 0) + ")";
-      }).join("\n");
-      var choice = window.prompt("Enter catalogue item number:\n" + labels, "1");
-      var index = Number(choice) - 1;
-      if (!isFinite(index) || index < 0 || index >= state.catalogue.length) {
-        return;
-      }
-      openItemEditor(Items.fromCatalogue(state.catalogue[index]));
-    });
+    $("btnAddItem").addEventListener("click", openAddItemModal);
+    var btnAddHeader = $("btnAddItemHeader");
+    if (btnAddHeader) {
+      btnAddHeader.addEventListener("click", openAddItemModal);
+    }
 
     var btnSaveDraft = $("btnSaveDraft");
     var btnGenerate = $("btnGenerate");
@@ -1109,18 +1104,6 @@
     } else {
       setStatus("Generate control missing — hard refresh the page (Ctrl+Shift+R).", "error");
     }
-    $("btnNew").addEventListener("click", async function () {
-      if (state.dirty) {
-        var ok = await confirmModal("Start new document?", "Unsaved changes will be lost.", [
-          { label: "Cancel", value: false },
-          { label: "Continue", value: true, className: "" }
-        ]);
-        if (!ok) {
-          return;
-        }
-      }
-      await startNewDocument($("documentType").value);
-    });
     $("btnPng").addEventListener("click", async function () {
       closeExportMenu();
       if (!runDocumentValidation()) {
@@ -1162,10 +1145,12 @@
   async function init() {
     try {
       fillDocumentTypes();
+      bindItemModalEvents();
       bindEvents();
       initPreviewPanel();
       state.settings = await Settings.load();
       await loadLogo(state.settings);
+      state.catalogue = await Items.listCatalogue();
       var handedOff = await consumeSessionHandoff();
       if (!handedOff) {
         await startNewDocument("tax-invoice");

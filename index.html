@@ -38,7 +38,7 @@
       <button type="button" class="nav-drawer-close" id="btnNavClose" aria-label="Close menu">&times;</button>
     </div>
     <nav class="nav-drawer-nav" aria-label="Main">
-      <a href="index.html" class="nav-drawer-link" data-page="editor">Editor</a>
+      <a href="index.html" class="nav-drawer-link" data-page="editor">New</a>
       <a href="settings.html" class="nav-drawer-link" data-page="settings">Settings</a>
       <a href="history.html" class="nav-drawer-link" data-page="history">History</a>
       <a href="backup.html" class="nav-drawer-link" data-page="backup">Backup</a>
@@ -50,45 +50,13 @@
     <div class="layout" id="editorLayout">
       <div class="editor-pane" id="editorForm">
         <div class="editor-split">
-        <div class="card card--items">
-          <div class="card-toolbar panel-controls">
-            <h2 class="card-toolbar__title">Line items</h2>
-            <div class="card-toolbar__actions">
-              <button type="button" class="btn secondary" id="btnAddItem" hidden>Add item</button>
-            </div>
-          </div>
-          <div class="items-panel" id="itemsPanel">
-            <div id="itemsEmptyState" class="items-empty-state">
-              <button type="button" class="items-add-center" id="btnAddItemCenter">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                <span>Add item</span>
-              </button>
-            </div>
-            <div class="table-wrap items-list-wrap" id="itemsListWrap" hidden>
-              <table class="items items--list" id="itemsTable">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Unit</th>
-                    <th>Rate</th>
-                    <th>Disc</th>
-                    <th>GST %</th>
-                    <th>Amount</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody id="itemsBody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="totals-box" id="totalsBox"></div>
-        </div>
-
         <div class="card document-card">
           <div class="document-card__header">
-            <label class="document-card__type-label" for="documentType">Document type</label>
-            <select id="documentType" class="document-card__type-select"></select>
+            <div class="document-card__type-wrap">
+              <span class="document-card__type-label" id="documentTypeLabelText">Document type</span>
+              <div class="document-type-chips" id="documentTypeChips" role="radiogroup" aria-labelledby="documentTypeLabelText"></div>
+              <select id="documentType" class="document-card__type-select sr-only" tabindex="-1" aria-hidden="true"></select>
+            </div>
           </div>
 
           <div class="editor-sections">
@@ -174,29 +142,39 @@
             </details>
           </div>
         </div>
+
+        <div class="card card--items">
+          <header class="items-card__header">
+            <div class="items-card__heading">
+              <h2 class="items-card__title">Line items</h2>
+              <p class="items-card__meta" id="itemsCardMeta" aria-live="polite">Add products or services</p>
+            </div>
+            <div class="items-card__actions">
+              <button type="button" class="btn secondary items-card__add" id="btnAddItemHeader" hidden>Add item</button>
+              <button type="button" class="btn secondary" id="btnPreviewToggle" aria-expanded="false" aria-controls="previewModalBackdrop" aria-haspopup="dialog">Preview</button>
+            </div>
+          </header>
+          <div class="items-card__body">
+            <div id="itemsPanel" class="items-panel">
+              <div id="itemsEmpty" class="items-empty">
+                <button type="button" class="items-empty-add" id="btnAddItem" aria-label="Add item">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <span>Add item</span>
+                </button>
+              </div>
+              <ul id="itemsList" class="items-list" hidden></ul>
+            </div>
+            <div class="totals-box" id="totalsBox"></div>
+          </div>
+        </div>
         </div>
       </div>
 
-      <aside class="preview-shell card" id="previewShell" aria-label="Live invoice preview">
-        <div class="card-toolbar panel-controls">
-          <h2 class="card-toolbar__title" id="previewShellTitle">Invoice preview</h2>
-          <div class="card-toolbar__actions">
-            <button type="button" class="btn secondary" id="btnPreviewClose" hidden>Close</button>
-          </div>
-        </div>
-        <div id="previewPaper" class="preview-paper a4">
-          <div id="invoicePreview" class="invoice-preview"></div>
-        </div>
-      </aside>
-
       <div class="editor-action-bar no-print" role="toolbar" aria-label="Document actions">
-        <p class="editor-action-bar__heading">Actions</p>
         <p id="editorReadonlyNotice" class="editor-readonly-notice" hidden>Generated — read only. Duplicate from History to make changes.</p>
         <button type="button" class="btn secondary" id="btnSaveDraft">Save draft</button>
         <button type="button" class="btn editor-action-bar__save" id="btnGenerate">Generate</button>
         <div class="editor-action-bar__cluster">
-          <span class="editor-action-bar__group-label" id="editorActionsMoreLabel">More</span>
-          <button type="button" class="btn secondary" id="btnNew">New</button>
           <details class="editor-action-menu" id="editorExportMenu" hidden>
             <summary class="btn secondary">Export</summary>
             <div class="editor-action-menu__panel" role="menu" aria-labelledby="editorExportMenuTitle">
@@ -206,7 +184,6 @@
               <button type="button" class="editor-action-menu__item" role="menuitem" id="btnPrint">Print</button>
             </div>
           </details>
-          <button type="button" class="btn secondary" id="btnPreviewToggle" aria-expanded="false" aria-controls="previewShell">Preview</button>
         </div>
       </div>
     </div>
@@ -232,63 +209,93 @@
     <option value="West Bengal"></option>
   </datalist>
 
-  <div id="itemEditorBackdrop" class="modal-backdrop no-print" aria-hidden="true">
-    <div class="modal modal--item-editor" role="dialog" aria-modal="true" aria-labelledby="itemEditorTitle">
-      <h3 id="itemEditorTitle">Add item</h3>
-      <div class="item-editor-form grid-2" id="itemEditorForm">
-        <div class="field full">
-          <label for="itemEditName">Item name *</label>
-          <input id="itemEditName" type="text" autocomplete="off" data-text-limit="lineItemName">
-        </div>
-        <div class="field">
-          <label for="itemEditQty">Qty *</label>
-          <input id="itemEditQty" type="text" inputmode="decimal" autocomplete="off" data-text-limit="lineItemQuantity">
-        </div>
-        <div class="field">
-          <label for="itemEditUnit">Unit *</label>
-          <select id="itemEditUnit" class="item-edit-unit"></select>
-        </div>
-        <div class="field">
-          <label for="itemEditRate">Rate (₹) *</label>
-          <input id="itemEditRate" type="text" inputmode="decimal" autocomplete="off" data-text-limit="lineItemRate" placeholder="0.00">
-        </div>
-        <div class="field">
-          <label for="itemEditDiscType">Discount</label>
-          <select id="itemEditDiscType" class="item-edit-disc-type">
-            <option value="none">None</option>
-            <option value="percent">%</option>
-            <option value="fixed">₹</option>
-          </select>
-        </div>
-        <div class="field" id="itemEditDiscValueField">
-          <label for="itemEditDiscValue">Disc value</label>
-          <input id="itemEditDiscValue" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0">
-        </div>
-        <div class="field">
-          <label for="itemEditGst">GST %</label>
-          <select id="itemEditGst" class="item-edit-gst"></select>
-        </div>
-        <div class="field" id="itemEditGstOtherField" hidden>
-          <label for="itemEditGstOther">Custom GST %</label>
-          <input id="itemEditGstOther" type="number" min="0" max="100" step="any" placeholder="0">
-        </div>
-        <div class="field full item-editor-amount">
-          <label>Amount</label>
-          <p id="itemEditAmount" class="item-editor-amount-value" aria-live="polite">₹0.00</p>
-        </div>
-      </div>
-      <div class="toolbar item-editor-actions">
-        <button type="button" class="btn ghost" id="itemEditCancel">Cancel</button>
-        <button type="button" class="btn" id="itemEditSave">Save item</button>
-      </div>
-    </div>
-  </div>
-
   <div id="modalBackdrop" class="modal-backdrop no-print" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal">
       <h3 id="modalTitle">Confirm</h3>
       <p id="modalMessage"></p>
       <div class="toolbar" id="modalActions"></div>
+    </div>
+  </div>
+
+  <div id="previewModalBackdrop" class="modal-backdrop modal-backdrop--preview no-print" role="dialog" aria-modal="true" aria-labelledby="previewModalTitle" aria-hidden="true">
+    <div class="modal modal--preview">
+      <header class="modal--preview__header">
+        <h3 id="previewModalTitle">Invoice preview</h3>
+        <button type="button" class="modal--preview__close" id="btnPreviewModalClose" aria-label="Close preview">&times;</button>
+      </header>
+      <div class="modal--preview__body">
+        <div id="previewPaper" class="preview-paper a4">
+          <div id="invoicePreview" class="invoice-preview"></div>
+        </div>
+      </div>
+      <footer class="modal--preview__footer toolbar">
+        <button type="button" class="btn secondary" id="btnPreviewModalDismiss">Close</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="itemModalBackdrop" class="modal-backdrop modal-backdrop--sheet no-print" role="dialog" aria-modal="true" aria-labelledby="itemModalTitle" aria-hidden="true">
+    <div class="modal modal--item">
+      <header class="item-modal-header">
+        <h3 id="itemModalTitle">Add item</h3>
+        <button type="button" class="item-modal-close" id="btnItemModalClose" aria-label="Close">&times;</button>
+      </header>
+      <div class="item-modal-body">
+        <div class="field item-modal-field">
+          <label for="itemModalName">Name *</label>
+          <input id="itemModalName" type="text" data-text-limit="lineItemName" autocomplete="off" placeholder="Item name">
+        </div>
+        <div class="item-modal-row item-modal-row--3">
+          <div class="field item-modal-field">
+            <label for="itemModalQty">Qty *</label>
+            <input id="itemModalQty" type="text" data-text-limit="lineItemQuantity" inputmode="decimal" placeholder="1">
+          </div>
+          <div class="field item-modal-field">
+            <label for="itemModalUnit">Unit *</label>
+            <select id="itemModalUnit"></select>
+          </div>
+          <div class="field item-modal-field">
+            <label for="itemModalRate">Rate *</label>
+            <input id="itemModalRate" type="text" data-text-limit="lineItemRate" inputmode="decimal" placeholder="0.00">
+          </div>
+        </div>
+        <div class="item-modal-row item-modal-row--tax">
+          <div class="item-modal-disc-group">
+            <div class="field item-modal-field">
+              <label for="itemModalDiscType">Disc</label>
+              <select id="itemModalDiscType">
+                <option value="none">None</option>
+                <option value="percent">%</option>
+                <option value="fixed">₹</option>
+              </select>
+            </div>
+            <div class="field item-modal-field item-modal-disc-value-wrap item-modal-disc-value-wrap--hidden">
+              <label for="itemModalDiscValue">Val</label>
+              <input id="itemModalDiscValue" type="number" min="0" step="0.01" placeholder="0" inputmode="decimal">
+            </div>
+          </div>
+          <div class="item-modal-gst-group">
+            <div class="field item-modal-field">
+              <label for="itemModalGst">GST</label>
+              <select id="itemModalGst"></select>
+            </div>
+            <div class="field item-modal-field item-modal-gst-other-wrap item-modal-gst-other-wrap--hidden">
+              <label for="itemModalGstOther">GST %</label>
+              <input id="itemModalGstOther" type="number" min="0" max="100" step="any" placeholder="0" inputmode="decimal">
+            </div>
+          </div>
+        </div>
+      </div>
+      <footer class="item-modal-footer">
+        <div class="item-modal-amount-card" aria-live="polite">
+          <span class="item-modal-amount-label">Amount</span>
+          <strong id="itemModalAmount" class="item-modal-amount">₹0.00</strong>
+        </div>
+        <div class="item-modal-footer-actions">
+          <button type="button" class="btn secondary" id="btnItemModalCancel">Cancel</button>
+          <button type="button" class="btn" id="btnItemModalSave">Save</button>
+        </div>
+      </footer>
     </div>
   </div>
 

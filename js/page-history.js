@@ -5,32 +5,136 @@
   var setStatus = AppUI.setStatus;
   var confirmModal = AppUI.confirmModal;
 
-  var OPEN_DOC_KEY = "billing.openDocId";
   var DRAFT_DOC_KEY = "billing.draftDocument";
 
   var state = {
-    settings: null
+    settings: null,
+    logoUrl: "assets/logo-placeholder.svg"
   };
+
+  async function loadLogo(settings) {
+    state.logoUrl = "assets/logo-placeholder.svg";
+    if (!settings || !settings.logoAssetId) {
+      return;
+    }
+    var asset = await StorageRepository.get("assets", settings.logoAssetId);
+    if (!asset || !asset.blob) {
+      return;
+    }
+    if (state.logoUrl.indexOf("blob:") === 0) {
+      URL.revokeObjectURL(state.logoUrl);
+    }
+    state.logoUrl = URL.createObjectURL(asset.blob);
+  }
+
+  function closeHistoryPreview() {
+    var backdrop = $("historyPreviewBackdrop");
+    if (!backdrop) {
+      return;
+    }
+    backdrop.classList.remove("open");
+    backdrop.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("history-preview-open");
+  }
+
+  function openHistoryPreview(row) {
+    var backdrop = $("historyPreviewBackdrop");
+    var paper = $("historyPreviewPaper");
+    var target = $("historyInvoicePreview");
+    var title = $("historyPreviewTitle");
+    if (!backdrop || !paper || !target) {
+      return;
+    }
+    var business = row.businessSnapshot || state.settings;
+    var calc = Calculations.calculateDocument(row, state.settings);
+    var displayNumber = DocumentEditor.displayDocumentNumber(row, state.settings);
+    var paperSize = String((state.settings && state.settings.paperSize) || "A4").toLowerCase();
+    paper.className = "preview-paper " + paperSize;
+    if (title) {
+      title.textContent = displayNumber + " · " + DocumentTypes.getById(row.documentType).title;
+    }
+    Preview.render(target, row, calc, business, state.logoUrl, displayNumber);
+    backdrop.classList.add("open");
+    backdrop.setAttribute("aria-hidden", "false");
+    document.body.classList.add("history-preview-open");
+    var closeBtn = $("btnHistoryPreviewClose");
+    if (closeBtn) {
+      closeBtn.focus();
+    }
+  }
+
+  function bindPreviewModal() {
+    var backdrop = $("historyPreviewBackdrop");
+    if (!backdrop) {
+      return;
+    }
+    function onDismiss() {
+      closeHistoryPreview();
+    }
+    $("btnHistoryPreviewClose").addEventListener("click", onDismiss);
+    $("btnHistoryPreviewDismiss").addEventListener("click", onDismiss);
+    backdrop.addEventListener("click", function (event) {
+      if (event.target === backdrop) {
+        onDismiss();
+      }
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && backdrop.classList.contains("open")) {
+        onDismiss();
+      }
+    });
+  }
+
+  function matchesHistoryFilters(row, query, date, status) {
+    if (status === "draft" && DocumentEditor.isGenerated(row)) {
+      return false;
+    }
+    if (status === "generated" && !DocumentEditor.isGenerated(row)) {
+      return false;
+    }
+    if (date && row.invoiceDate !== date) {
+      return false;
+    }
+    if (!query) {
+      return true;
+    }
+    var displayNo = DocumentEditor.displayDocumentNumber(row, state.settings);
+    var statusHay = DocumentEditor.isGenerated(row) ? "generated" : "draft";
+    var hay = (displayNo + " " + row.documentNumber + " " + statusHay + " " + ((row.customer && row.customer.name) || "")).toLowerCase();
+    return hay.indexOf(query) >= 0;
+  }
 
   async function refreshHistory() {
     var query = ($("historySearch").value || "").trim().toLowerCase();
     var date = $("historyDate").value;
+    var status = ($("historyStatus") && $("historyStatus").value) || "all";
     var rows = await DocumentEditor.listDocuments();
     var list = $("historyList");
+    var summary = $("historySummary");
+    var draftTotal = 0;
+    var generatedTotal = 0;
+    rows.forEach(function (row) {
+      if (DocumentEditor.isGenerated(row)) {
+        generatedTotal += 1;
+      } else {
+        draftTotal += 1;
+      }
+    });
+    var visible = rows.filter(function (row) {
+      return matchesHistoryFilters(row, query, date, status);
+    });
+    if (summary) {
+      summary.textContent =
+        rows.length === 0
+          ? ""
+          : draftTotal + " draft" + (draftTotal === 1 ? "" : "s") +
+            " · " + generatedTotal + " generated" +
+            (visible.length !== rows.length ? " · showing " + visible.length : "");
+    }
     while (list.firstChild) {
       list.removeChild(list.firstChild);
     }
-    rows.filter(function (row) {
-      if (date && row.invoiceDate !== date) {
-        return false;
-      }
-      if (!query) {
-        return true;
-      }
-      var displayNo = DocumentEditor.displayDocumentNumber(row, state.settings);
-      var hay = (displayNo + " " + row.documentNumber + " " + ((row.customer && row.customer.name) || "")).toLowerCase();
-      return hay.indexOf(query) >= 0;
-    }).forEach(function (row) {
+    visible.forEach(function (row) {
       var item = document.createElement("div");
       item.className = "history-item";
       var info = document.createElement("div");
@@ -61,8 +165,7 @@
       }
 
       actions.appendChild(makeBtn("Open", function () {
-        sessionStorage.setItem(OPEN_DOC_KEY, row.id);
-        window.location.href = "index.html";
+        openHistoryPreview(row);
       }));
       actions.appendChild(makeBtn("Duplicate", function () {
         var draft = DocumentEditor.duplicateDocument(row, state.settings);
@@ -99,7 +202,10 @@
     if (!list.firstChild) {
       var empty = document.createElement("p");
       empty.className = "hint";
-      empty.textContent = "No saved documents yet.";
+      empty.textContent =
+        rows.length === 0
+          ? "No saved invoices yet — save a draft or generate from the editor."
+          : "No invoices match your filters.";
       list.appendChild(empty);
     }
   }
@@ -107,14 +213,20 @@
   function bindEvents() {
     $("historySearch").addEventListener("input", refreshHistory);
     $("historyDate").addEventListener("change", refreshHistory);
+    var statusEl = $("historyStatus");
+    if (statusEl) {
+      statusEl.addEventListener("change", refreshHistory);
+    }
   }
 
   async function init() {
     try {
       bindEvents();
+      bindPreviewModal();
       state.settings = await Settings.load();
+      await loadLogo(state.settings);
       await refreshHistory();
-      setStatus("Open, duplicate, or delete saved documents.", "info");
+      setStatus("All drafts and generated invoices — preview, duplicate, or delete.", "info");
     } catch (error) {
       setStatus(error.message || "Could not load history.", "error");
     }

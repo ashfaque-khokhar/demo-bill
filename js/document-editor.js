@@ -22,7 +22,12 @@
     }
     var normalized = doc;
     if (!normalized.lifecycleStatus) {
-      normalized.lifecycleStatus = normalized.id ? "generated" : "draft";
+      if ((typeof normalized.generatedAt === "number" && normalized.generatedAt > 0) ||
+          (normalized.numberReserved === true && normalized.documentNumber)) {
+        normalized.lifecycleStatus = "generated";
+      } else {
+        normalized.lifecycleStatus = "draft";
+      }
     }
     if (typeof normalized.numberReserved !== "boolean") {
       normalized.numberReserved = normalized.lifecycleStatus === "generated";
