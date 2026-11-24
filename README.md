@@ -1,5 +1,7 @@
 # Billing Generator
 
+https://ashfaque-khokhar.github.io/demo-bill/index.html
+
 Browser-based billing app (HTML, CSS, vanilla JavaScript). No backend, Node.js, npm, or CDN at runtime.
 
 ## Open the app
